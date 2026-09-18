@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>bounty-watch · scope changes</title>
 <link rel="stylesheet" href="style.css">
+<script src="common.js"></script>
 </head>
 <body>
 <main>
@@ -19,6 +20,7 @@
   <select id="plat"><option value="">All platforms</option><option value="h1">HackerOne</option><option value="bc">Bugcrowd</option><option value="ywh">YesWeHack</option><option value="it">Intigriti</option></select>
   <select id="dir"><option value="">Added + removed</option><option value="scope+">Added only</option><option value="scope-">Removed only</option></select>
   <select id="fld"><option value="">In + out of scope</option><option value="scope">In-scope list</option><option value="out-of-scope">Out-of-scope list</option></select>
+  <select id="stype" title="Only show changed assets of this type"></select>
   <select id="since"><option value="1">Last 24h</option><option value="7" selected>Last 7 days</option><option value="30">Last 30 days</option><option value="90">Last 90 days</option></select>
   <label class="mut"><input type="checkbox" id="bb" checked> bug bounty only</label>
 </div>
@@ -34,6 +36,12 @@ let P = {}, E = [], days = 7;
 
 // Older events store assets only in the text; newer ones carry a structured list.
 function assets(e){
+  const st = $("#stype").value, all = rawAssets(e);
+  if(!st) return all;
+  if(st === "wd") return typeMatch(P[e.k]?.scope || all, "wd") ? all.filter(a => "wd".includes(stype(a))) : [];
+  return all.filter(a => stype(a) === st);
+}
+function rawAssets(e){
   if(e.a) return e.a;
   const i = e.x.indexOf(": "); return i < 0 ? [] : e.x.slice(i+2).replace(/ \(\+\d+ more\)$/, "").split(", ");
 }
@@ -53,7 +61,7 @@ function filtered(){
   const q = $("#q").value.trim().toLowerCase(), pl = $("#plat").value, dir = $("#dir").value, fl = $("#fld").value;
   const since = cutoff(+$("#since").value), bb = $("#bb").checked;
   return E.filter(e => e.d >= since && (!pl || e.k.startsWith(pl+":")) && (!dir || e.t === dir) && (!fl || field(e) === fl)
-    && (!bb || bounty(e)) && (!q || (e.k+" "+e.n+" "+assets(e).join(" ")).toLowerCase().includes(q)));
+    && (!bb || bounty(e)) && assets(e).length && (!q || (e.k+" "+e.n+" "+assets(e).join(" ")).toLowerCase().includes(q)));
 }
 function render(){
   const ev = filtered();
@@ -85,9 +93,10 @@ function render(){
   }).join("") || `<div class="empty">No scope changes match these filters.</div>`;
   $("#more").hidden = dayKeys.length <= days;
 }
-["#q","#plat","#dir","#fld","#since","#bb"].forEach(s => $(s).addEventListener("input", () => { days = 7; render(); }));
+["#q","#plat","#dir","#fld","#since","#bb","#stype"].forEach(s => $(s).addEventListener("input", () => { days = 7; render(); }));
 $("#more").onclick = () => { days += 7; render(); };
 $("#top").onclick = e => { const q = e.target.dataset.q; if(q){ e.preventDefault(); $("#q").value = q; render(); } };
+$("#stype").innerHTML = typeOptions("All asset types");
 init().catch(e => { $("#meta").textContent = "Failed to load data: " + e; });
 </script>
 </body>

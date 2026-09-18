@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>bounty-watch</title>
 <link rel="stylesheet" href="style.css">
+<script src="common.js"></script>
 </head>
 <body>
 <main>
@@ -25,6 +26,7 @@
   <input type="search" id="q" placeholder="Filter by name, handle, asset…">
   <select id="plat"><option value="">All platforms</option><option value="h1">HackerOne</option><option value="bc">Bugcrowd</option><option value="ywh">YesWeHack</option><option value="it">Intigriti</option></select>
   <select id="kind"><option value="">All change types</option><option>new</option><option>suspended</option><option>resumed</option><option>scope+</option><option>scope-</option><option>deploy</option><option>subdomain</option></select>
+  <select id="stype" title="Programs whose scope includes this asset type"></select>
   <select id="sort"><option value="first">Newest programs first</option><option value="upd">Recently updated first</option><option value="bounty">Highest bounty</option><option value="name">Name A–Z</option></select>
   <select id="since"><option value="">Any time</option><option value="1">Last 24h</option><option value="7">Last 7 days</option><option value="30">Last 30 days</option><option value="90">Last 90 days</option></select>
   <label class="mut"><input type="checkbox" id="mine"> watchlist only</label>
@@ -68,6 +70,7 @@ function match(k, extra){
   const q = $("#q").value.trim().toLowerCase(), pl = $("#plat").value;
   if(pl && !k.startsWith(pl+":")) return false;
   if($("#mine").checked && !W.includes(k)) return false;
+  const st = $("#stype").value; if(st && !typeMatch(P[k]?.scope || [], st)) return false;
   return !q || (k + " " + extra).toLowerCase().includes(q);
 }
 function progRow(k, p, note){
@@ -79,7 +82,7 @@ function progRow(k, p, note){
     <button class="star" data-k="${esc(k)}">${on?"★ watching":"☆ watch"}</button></div>
     <div class="x">${p?.first?`Added ${esc(p.first)}`:"Added before tracking"}${p?.upd?` · Updated ${esc(p.upd)}`:""}</div>
     ${note?`<div class="x">${esc(note)}</div>`:""}
-    ${sc.length?`<details><summary>${sc.length} in-scope assets</summary><ul>${sc.map(a=>`<li>${esc(a)}</li>`).join("")}</ul></details>`:""}</div>`;
+    ${sc.length?`<details><summary>${sc.length} in-scope assets · ${typeSummary(sc)}</summary><ul>${sc.map(a=>`<li>${esc(a)}</li>`).join("")}</ul></details>`:""}</div>`;
 }
 function evRow(e){
   return `<div class="row"><div class="top"><span class="tag t-${esc(e.t)}">${esc(e.t)}</span><a href="${esc(e.u)}" target="_blank" rel="noopener">${esc(e.n)}</a>
@@ -127,12 +130,13 @@ function render(){
 }
 $("#tabs").onclick = e => { const t = e.target.dataset.t; if(!t) return; tab = t; limit = 100; if(t==="recent") $("#sort").value = "upd"; if(t==="all") $("#sort").value = "first";
   document.querySelectorAll("#tabs button").forEach(b=>b.classList.toggle("on", b.dataset.t===t)); render(); };
-["#q","#plat","#kind","#mine","#sort","#since"].forEach(s => $(s).addEventListener("input", ()=>{limit=100; render();}));
+["#q","#plat","#kind","#mine","#sort","#since","#stype"].forEach(s => $(s).addEventListener("input", ()=>{limit=100; render();}));
 $("#more").onclick = () => { limit += 200; render(); };
 $("#out").onclick = e => {
   const s = e.target.closest(".star[data-k]"); if(s) return toggle(s.dataset.k);
   if(e.target.id === "savepat"){ ls.set("bw_pat", $("#pat").value.trim()); loadWatch().then(()=>{alert("Saved."); render();}); }
 };
+$("#stype").innerHTML = typeOptions("Any scope type");
 init().catch(e => { $("#meta").textContent = "Failed to load data: " + e; });
 </script>
 </body>
