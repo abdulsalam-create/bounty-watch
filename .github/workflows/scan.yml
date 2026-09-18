@@ -26,6 +26,8 @@ jobs:
         with:
           python-version: "3.12"
       - run: python scan.py
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
       - name: Commit data
         run: |
           git config user.name "bounty-watch-bot"

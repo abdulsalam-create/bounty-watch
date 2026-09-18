@@ -14,7 +14,7 @@ from datetime import datetime, timezone
 
 SRC = os.environ.get("BW_SRC") or "https://raw.githubusercontent.com/arkadiyt/bounty-targets-data/main/data/{}_data.json"
 PLATFORMS = {"h1": "hackerone", "bc": "bugcrowd", "ywh": "yeswehack", "it": "intigriti"}
-SNAP, FPS, WATCH = "data/snapshot.json", "data/fingerprints.json", "watchlist.json"
+SNAP, FPS, WATCH, META = "data/snapshot.json", "data/fingerprints.json", "watchlist.json", "data/meta.json"
 PROGS, CHANGES, ALERT = "docs/data/programs.json", "docs/data/changes.json", "alert.md"
 FEED_DAYS, MAX_URLS, TIMEOUT = 90, 25, 10
 UA = {"User-Agent": "Mozilla/5.0 (bounty-watch; +https://github.com/abdulsalam-create/bounty-watch)"}
@@ -212,31 +212,79 @@ def watch_checks(key, prog, fps, events):
 
 # ---------- main ----------
 
-def ev(kind, key, prog, detail):
-    return {"d": TODAY, "t": kind, "k": key, "n": prog["name"], "u": prog.get("url", ""), "x": detail}
+def ev(kind, key, prog, detail, day=TODAY):
+    return {"d": day, "t": kind, "k": key, "n": prog["name"], "u": prog.get("url", ""), "x": detail}
+
+
+def diff(old, new, day=TODAY):
+    events = []
+    for k in sorted(set(new) - set(old)):
+        events.append(ev("new", k, new[k], f"{len(new[k]['scope'])} in-scope assets", day))
+    for k in sorted(set(old) - set(new)):
+        events.append(ev("closed", k, old[k], "program no longer listed", day))
+    for k in sorted(set(new) & set(old)):
+        for f, label in (("scope", "scope"), ("oos", "out-of-scope")):
+            add = sorted(set(new[k][f]) - set(old[k][f]))
+            rem = sorted(set(old[k][f]) - set(new[k][f]))
+            if add:
+                events.append(ev("scope+", k, new[k], f"{label} added: " + ", ".join(add[:20]), day))
+            if rem:
+                events.append(ev("scope-", k, new[k], f"{label} removed: " + ", ".join(rem[:20]), day))
+    return events
+
+
+def apply_meta(meta, events):
+    for e in events:
+        m = meta.setdefault(e["k"], {"first": None, "upd": None})
+        if e["t"] == "new":
+            m["first"] = m["first"] or e["d"]
+        if e["t"] != "closed":
+            m["upd"] = max(m["upd"] or "", e["d"])
+
+
+def backfill():
+    """One-off: rebuild first-seen / last-updated dates from the source repo's git history."""
+    api = "https://api.github.com/repos/arkadiyt/bounty-targets-data/commits?per_page=1&until="
+    hdr = dict(UA, **({"Authorization": "Bearer " + os.environ["GITHUB_TOKEN"]} if os.environ.get("GITHUB_TOKEN") else {}))
+    days = [365, 180, 120, 90, 75, 60, 45, 30, 25, 21] + list(range(18, 0, -1))
+    meta, feed, prev = {}, [], None
+    for n in days:
+        until = datetime.fromtimestamp(NOW.timestamp() - n * 86400, timezone.utc)
+        try:
+            req = urllib.request.Request(api + until.strftime("%Y-%m-%dT%H:%M:%SZ"), headers=hdr)
+            with urllib.request.urlopen(req, timeout=30, context=CTX) as r:
+                sha = json.loads(r.read())[0]["sha"]
+            snap = {}
+            for tag, name in PLATFORMS.items():
+                body, _ = get(f"https://raw.githubusercontent.com/arkadiyt/bounty-targets-data/{sha}/data/{name}_data.json", timeout=120)
+                snap.update(normalize(tag, json.loads(body)))
+        except Exception as e:  # noqa: BLE001
+            print(f"[!] backfill {n}d: {e}")
+            continue
+        day = until.strftime("%Y-%m-%d")
+        print(f"[+] backfill {day}: {len(snap)} programs")
+        if prev is not None:
+            evs = diff(prev, snap, day)
+            apply_meta(meta, evs)
+            if n <= FEED_DAYS:
+                feed = evs + feed
+        prev = snap
+    return meta, feed, prev
 
 
 def main():
     watch = set(load(WATCH, []))
     old = load(SNAP, None)
     fps = load(FPS, {})
+    meta = load(META, None)
+    feed = [e for e in load(CHANGES, []) if e["d"] >= _days_ago(FEED_DAYS)]
+    if meta is None:
+        meta, bf_feed, bf_last = backfill()
+        feed = [e for e in bf_feed if e["d"] >= _days_ago(FEED_DAYS)] + feed
+        old = old if old is not None else bf_last
     new = fetch_all()
     print(f"[+] {len(new)} programs")
-    events = []
-
-    if old is not None:
-        for k in sorted(set(new) - set(old)):
-            events.append(ev("new", k, new[k], f"{len(new[k]['scope'])} in-scope assets"))
-        for k in sorted(set(old) - set(new)):
-            events.append(ev("closed", k, old[k], "program no longer listed"))
-        for k in sorted(set(new) & set(old)):
-            for f, label in (("scope", "scope"), ("oos", "out-of-scope")):
-                add = sorted(set(new[k][f]) - set(old[k][f]))
-                rem = sorted(set(old[k][f]) - set(new[k][f]))
-                if add:
-                    events.append(ev("scope+", k, new[k], f"{label} added: " + ", ".join(add[:20])))
-                if rem:
-                    events.append(ev("scope-", k, new[k], f"{label} removed: " + ", ".join(rem[:20])))
+    events = diff(old, new) if old is not None else []
 
     for k in sorted(watch):
         if k in new:
@@ -246,12 +294,14 @@ def main():
         if k not in watch:
             del fps[k]
 
-    feed = [e for e in load(CHANGES, []) if e["d"] >= _days_ago(FEED_DAYS)]
-    feed = events + [e for e in feed if not (e["d"] == TODAY and e in events)]
+    apply_meta(meta, events)
+    feed = events + [e for e in feed if e not in events]
+    feed.sort(key=lambda e: e["d"], reverse=True)
     save(CHANGES, feed)
-    slim = {k: {f: v for f, v in p.items() if f != "oos"} for k, p in new.items()}
+    slim = {k: {**{f: v for f, v in p.items() if f != "oos"}, **meta.get(k, {})} for k, p in new.items()}
     save(PROGS, {"updated": NOW.isoformat(timespec="minutes"), "programs": slim})
     save(SNAP, new)
+    save(META, meta)
     save(FPS, fps, pretty=True)
     write_alert(events, watch, first=old is None)
 
