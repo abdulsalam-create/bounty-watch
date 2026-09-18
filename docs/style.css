@@ -23,7 +23,7 @@ input[type=search]{flex:1;min-width:180px}
 details summary{cursor:pointer;color:var(--mut);margin-top:4px}
 details ul{margin:4px 0;padding-left:18px;max-height:240px;overflow:auto;word-break:break-all}
 .empty{padding:24px;text-align:center;color:var(--mut)}
-#more{display:block;margin:8px auto}
+#more{display:block;margin:8px auto}#more[hidden]{display:none}
 .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin-bottom:12px}
 .stat{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:10px 12px}.stat b{display:block;font-size:22px}
 .day{margin:18px 0 8px;font-weight:600}.day span{font-weight:400}
