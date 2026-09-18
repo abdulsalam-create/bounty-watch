@@ -4,6 +4,7 @@ Stdlib only. Run: python scan.py
 """
 import hashlib
 import json
+import math
 import os
 import re
 import ssl
@@ -115,7 +116,72 @@ def fetch_all():
                 time.sleep(5)
         else:
             raise SystemExit(f"could not fetch {name}; aborting so the snapshot is not corrupted")
+    fetch_private(progs)
     return progs
+
+
+def fetch_private(progs):
+    """Merge in the user's PRIVATE invited programs (best-effort; needs API tokens as secrets).
+
+    HackerOne: H1_API_USER + H1_API_TOKEN.   Intigriti: INTIGRITI_TOKEN (researcher API).
+    Every failure is swallowed so a bad/absent token never breaks the public scan.
+    """
+    import base64
+    u, t = os.environ.get("H1_API_USER"), os.environ.get("H1_API_TOKEN")
+    if u and t:
+        try:
+            auth = base64.b64encode(f"{u}:{t}".encode()).decode()
+            hdr = dict(UA, Authorization="Basic " + auth, Accept="application/json")
+            page = "https://api.hackerone.com/v1/hackers/programs?page[size]=100"
+            n = 0
+            while page and n < 10:
+                req = urllib.request.Request(page, headers=hdr)
+                with urllib.request.urlopen(req, timeout=30, context=CTX) as r:
+                    d = json.loads(r.read())
+                for row in d.get("data", []):
+                    a = row.get("attributes", {})
+                    if a.get("state") != "public_mode":  # keep the private ones
+                        h = a.get("handle")
+                        k = f"h1:{h}"
+                        if h and k not in progs:
+                            progs[k] = _priv_h1_scope(h, hdr, a)
+                page = (d.get("links") or {}).get("next")
+                n += 1
+            print("[+] merged HackerOne private programs")
+        except Exception as e:  # noqa: BLE001
+            print(f"[!] H1 private: {e}")
+    it = os.environ.get("INTIGRITI_TOKEN")
+    if it:
+        try:
+            hdr = dict(UA, Authorization="Bearer " + it, Accept="application/json")
+            req = urllib.request.Request("https://api.intigriti.com/external/researcher/v1/programs", headers=hdr)
+            with urllib.request.urlopen(req, timeout=30, context=CTX) as r:
+                data = json.loads(r.read())
+                for row in (data.get("records", data) if isinstance(data, dict) else data) or []:
+                    h = row.get("handle") or row.get("id")
+                    comp = row.get("companyHandle", row.get("company", ""))
+                    k = f"it:{comp}/{h}" if comp else f"it:{h}"
+                    if row.get("confidentialityLevel", row.get("maxConfidentialityLevel")) not in ("Public", 4) and k not in progs:
+                        progs[k] = {"name": row.get("name", h), "url": row.get("webLinks", {}).get("detail", ""),
+                                    "bounty": 0, "scope": [], "oos": [], "priv": True}
+            print("[+] merged Intigriti private programs")
+        except Exception as e:  # noqa: BLE001
+            print(f"[!] Intigriti private: {e}")
+
+
+def _priv_h1_scope(handle, hdr, attrs):
+    scope = []
+    try:
+        req = urllib.request.Request(f"https://api.hackerone.com/v1/hackers/programs/{handle}", headers=hdr)
+        with urllib.request.urlopen(req, timeout=30, context=CTX) as r:
+            for s in json.loads(r.read()).get("relationships", {}).get("structured_scopes", {}).get("data", []):
+                a = s.get("attributes", {})
+                if a.get("eligible_for_submission") and a.get("asset_identifier"):
+                    scope.append(a["asset_identifier"])
+    except Exception:  # noqa: BLE001
+        pass
+    return {"name": attrs.get("name", handle), "url": f"https://hackerone.com/{handle}",
+            "bounty": 1 if attrs.get("offers_bounties") else 0, "scope": sorted(set(scope)), "oos": [], "priv": True}
 
 
 # ---------- watchlist checks ----------
@@ -132,6 +198,15 @@ def web_targets(scope):
     return sorted(set(urls))[:MAX_URLS]
 
 
+def _abs(base, src):
+    if src.startswith(("http://", "https://")):
+        return src.split("?")[0]
+    root = re.match(r"^(https?://[^/]+)", base)
+    if src.startswith("/") and root:
+        return root.group(1) + src.split("?")[0]
+    return base.rsplit("/", 1)[0] + "/" + src.split("?")[0]
+
+
 def fingerprint(url):
     try:
         body, h = get(url, limit=600_000)
@@ -140,7 +215,8 @@ def fingerprint(url):
     html = body.decode("utf-8", "ignore")
     title = re.search(r"<title[^>]*>(.*?)</title>", html, re.I | re.S)
     gen = re.search(r'<meta[^>]+name=["\']generator["\'][^>]+content=["\']([^"\']+)', html, re.I)
-    scripts = sorted({s.split("?")[0].rsplit("/", 1)[-1] for s in re.findall(r'<script[^>]+src=["\']([^"\']+)', html, re.I)})
+    srcs = re.findall(r'<script[^>]+src=["\']([^"\']+)', html, re.I)
+    scripts = sorted({s.split("?")[0].rsplit("/", 1)[-1] for s in srcs})
     hl = {k.lower(): v for k, v in h.items()}
     fp = {
         "title": (title.group(1).strip()[:120] if title else ""),
@@ -150,7 +226,129 @@ def fingerprint(url):
         "js": scripts[:60],
     }
     fp["hash"] = hashlib.sha1(json.dumps(fp, sort_keys=True).encode()).hexdigest()[:12]
+    fp["jsurls"] = sorted({_abs(url, s) for s in srcs})[:40]  # not hashed; used for endpoint extraction
+    fp["eps"] = extract_endpoints(html)  # endpoints referenced straight from the HTML
     return fp
+
+
+# Paths / GraphQL ops / feature-flag names pulled from JS and HTML — new ones flag new features.
+EP_RE = re.compile(r'["\'`](/(?:api|v\d|graphql|rest|internal|admin|user|account|auth|oauth|payment|billing|webhook|gql)[\w/\-.]{0,60})["\'`]', re.I)
+GQL_RE = re.compile(r'\b(?:query|mutation)\s+([A-Za-z][A-Za-z0-9_]{3,40})\s*[({]')
+FLAG_RE = re.compile(r'["\']((?:feature|flag|ff|enable|beta)[_.-][A-Za-z0-9_.-]{2,40})["\']', re.I)
+
+
+def extract_endpoints(text):
+    eps = set()
+    for m in EP_RE.findall(text):
+        eps.add(m.rstrip("/").lower())
+    for m in GQL_RE.findall(text):
+        eps.add("gql:" + m)
+    for m in FLAG_RE.findall(text):
+        eps.add("flag:" + m.lower())
+    return sorted(eps)[:400]
+
+
+def js_endpoints(urls):
+    """Download each JS bundle and extract endpoint-like strings."""
+    found = set()
+
+    def one(u):
+        try:
+            body, _ = get(u, limit=2_500_000)
+            return extract_endpoints(body.decode("utf-8", "ignore"))
+        except Exception:  # noqa: BLE001
+            return []
+
+    with ThreadPoolExecutor(6) as ex:
+        for r in ex.map(one, urls[:20]):
+            found.update(r)
+    return sorted(found)
+
+
+CHANGELOG_PATHS = ("/changelog", "/releases", "/whats-new", "/release-notes", "/whatsnew",
+                   "/updates", "/news/product", "/blog/changelog", "/docs/changelog")
+
+
+def changelog_scan(root):
+    """Return {path: sha} for any changelog-like page that exists, so we can diff its text."""
+    out = {}
+    for p in CHANGELOG_PATHS:
+        try:
+            body, h = get(root + p, limit=400_000)
+            if "text/html" not in h.get("Content-Type", "text/html"):
+                continue
+            text = re.sub(r"<script.*?</script>|<style.*?</style>|<[^>]+>|\s+", " ",
+                          body.decode("utf-8", "ignore"), flags=re.S)
+            out[p] = hashlib.sha1(text.strip().encode()).hexdigest()[:12]
+        except Exception:  # noqa: BLE001
+            continue
+    return out
+
+
+# Fingerprints of third-party services that show a takeover-able "no such site" page.
+TAKEOVER = {
+    "github.io": "There isn't a GitHub Pages site here",
+    "herokuapp": "No such app",
+    "s3.amazonaws": "NoSuchBucket",
+    "cloudfront": "The request could not be satisfied",
+    "netlify": "Not Found - Request ID",
+    "surge.sh": "project not found",
+    "fastly": "Fastly error: unknown domain",
+    "zendesk": "Help Center Closed",
+    "readthedocs": "Maximum number of failed attempts",
+    "unbounce": "The requested URL was not found",
+    "wpengine": "The site you were looking for couldn't be found",
+}
+
+
+def liveness(host):
+    """Resolve a host and, if it looks parked on a takeover-able service, flag it."""
+    import socket
+    try:
+        socket.setdefaulttimeout(6)
+        socket.getaddrinfo(host, 443)
+    except Exception:  # noqa: BLE001
+        return {"live": False}
+    info = {"live": True}
+    try:
+        body, h = get("https://" + host, limit=120_000, timeout=8)
+        txt = body.decode("utf-8", "ignore")
+        server = (h.get("Server", "") + " " + h.get("Via", "")).lower()
+        for svc, sig in TAKEOVER.items():
+            if sig.lower() in txt.lower() or svc in server:
+                info["takeover"] = svc
+                break
+    except Exception:  # noqa: BLE001
+        pass
+    return info
+
+
+def app_version(asset):
+    """Best-effort current version of an in-scope mobile app (iOS via iTunes API, Android via Play page)."""
+    try:
+        m = re.search(r"id(\d{6,})", asset)  # Apple numeric id
+        bundle = re.search(r"apps\.apple\.com.*?/id\d+|/([a-z0-9.]+\.[a-z0-9.]+)$", asset, re.I)
+        if "apple.com" in asset and m:
+            body, _ = get(f"https://itunes.apple.com/lookup?id={m.group(1)}", timeout=15)
+            r = json.loads(body).get("results") or [{}]
+            return f"iOS {r[0].get('version', '?')}"
+        pid = re.search(r"id=([a-zA-Z0-9_.]+)", asset) or (re.match(r"^[a-z][\w.]+\.[\w.]+$", asset.strip()) and asset.strip())
+        gid = pid.group(1) if hasattr(pid, "group") else pid
+        if gid:
+            body, _ = get(f"https://play.google.com/store/apps/details?id={gid}&hl=en", limit=800_000, timeout=15)
+            v = re.search(r'\[\[\["([\d]+\.[\d.]+)"\]\]', body.decode("utf-8", "ignore"))
+            return f"Android {v.group(1)}" if v else None
+    except Exception:  # noqa: BLE001
+        return None
+    return None
+
+
+def mobile_assets(scope):
+    out = []
+    for a in scope:
+        if re.search(r"apps\.apple\.com|play\.google\.com|^[a-z][\w]+(\.[\w]+){2,}$", a.strip(), re.I):
+            out.append(a.strip())
+    return out[:15]
 
 
 def crtsh(domain):
@@ -186,29 +384,163 @@ def diff_fp(old, new):
 
 def watch_checks(key, prog, fps, events):
     first = key not in fps
-    state = fps.setdefault(key, {"fp": {}, "subs": {}})
+    state = fps.setdefault(key, {"fp": {}, "subs": {}, "eps": [], "chlog": {}, "apps": {}})
+    state.setdefault("eps", [])
+    state.setdefault("chlog", {})
+    state.setdefault("apps", {})
     urls = web_targets(prog["scope"])
     with ThreadPoolExecutor(8) as ex:
         results = dict(zip(urls, ex.map(fingerprint, urls)))
+
+    # 1. deploys (frontend build / stack changes) + collect new JS bundles for endpoint mining
+    new_bundles = []
+    html_eps = set()
     for url, fp in results.items():
         old = state["fp"].get(url)
         if old and not first:
             note = diff_fp(old, fp)
             if note:
                 events.append(ev("deploy", key, prog, f"{url} — {note}"))
+            new_bundles += sorted(set(fp.get("jsurls", [])) - set(old.get("jsurls", [])))
+        elif first:
+            new_bundles += fp.get("jsurls", [])
+        html_eps.update(fp.get("eps", []))
         if "err" not in fp or not old:
             state["fp"][url] = fp
+
+    # 2. new features / endpoints / changelogs (the "what changed in the code" signal)
+    eps = set(html_eps)
+    if new_bundles:
+        eps.update(js_endpoints(new_bundles))
+    seen = set(state["eps"])
+    fresh = sorted(e for e in eps if e not in seen)
+    if fresh and not first:
+        api = [e for e in fresh if not e.startswith(("flag:", "gql:"))]
+        gql = [e[4:] for e in fresh if e.startswith("gql:")]
+        flags = [e[5:] for e in fresh if e.startswith("flag:")]
+        parts = []
+        if api:
+            parts.append(f"{len(api)} new endpoint(s): " + ", ".join(api[:12]))
+        if gql:
+            parts.append(f"{len(gql)} new GraphQL op(s): " + ", ".join(gql[:10]))
+        if flags:
+            parts.append(f"{len(flags)} new feature flag(s): " + ", ".join(flags[:10]))
+        events.append(ev("feature", key, prog, "; ".join(parts), api=api[:60], gql=gql[:40], flags=flags[:40]))
+    state["eps"] = sorted(seen | eps)[:1500]
+
+    roots = sorted({re.match(r"^(https?://[^/]+)", u).group(1) for u in urls if re.match(r"^https?://[^/]+", u)})[:6]
+    for root in roots:
+        cur = changelog_scan(root)
+        for path, sha in cur.items():
+            old = state["chlog"].get(root + path)
+            if old and old != sha and not first:
+                events.append(ev("changelog", key, prog, f"changelog updated: {root}{path}"))
+            state["chlog"][root + path] = sha
+
+    # 3. new subdomains (crt.sh) + liveness / takeover check on the fresh ones
     for d in sorted({a[2:].split("/")[0] for a in prog["scope"] if a.startswith("*.")})[:10]:
         subs = crtsh(d)
         if subs is None:
             continue
         old = state["subs"].get(d)
         if old is not None and not first:
-            new = sorted(set(subs) - set(old))
-            if new:
-                events.append(ev("subdomain", key, prog, f"{len(new)} new under {d}: " + ", ".join(new[:15])))
+            fresh_subs = sorted(set(subs) - set(old))
+            if fresh_subs:
+                events.append(ev("subdomain", key, prog, f"{len(fresh_subs)} new under {d}: " + ", ".join(fresh_subs[:15]), subs=fresh_subs[:60]))
+                with ThreadPoolExecutor(10) as ex:
+                    live = dict(zip(fresh_subs[:40], ex.map(liveness, fresh_subs[:40])))
+                takeovers = [h for h, i in live.items() if i.get("takeover")]
+                alive = [h for h, i in live.items() if i.get("live")]
+                if alive:
+                    events.append(ev("live-host", key, prog, f"{len(alive)} of the new subdomains resolve: " + ", ".join(alive[:15]), hosts=alive[:60]))
+                for h in takeovers:
+                    events.append(ev("takeover", key, prog, f"possible subdomain takeover: {h} → {live[h]['takeover']}"))
         state["subs"][d] = subs
         time.sleep(2)
+
+    # 4. mobile app version bumps (new app build usually means new API surface)
+    for a in mobile_assets(prog["scope"]):
+        v = app_version(a)
+        if not v:
+            continue
+        old = state["apps"].get(a)
+        if old and old != v and not first:
+            events.append(ev("appversion", key, prog, f"{a}: {old} -> {v}"))
+        state["apps"][a] = v
+
+
+# ---------- hunt score ----------
+# Additive 0-100 model. The edge in bug bounty is FRESH, under-hunted attack surface,
+# so recency and momentum of change dominate; static reward/breadth fill the rest.
+# Additive (not multiplicative) so one weak signal never zeroes a strong target,
+# and every input is something this dataset actually has — no fabricated SLAs.
+
+HUNT_W = {"fresh": 34, "momentum": 24, "surface": 18, "reward": 14, "unsaturated": 10}
+
+
+def _decay(days, half):
+    return 0.5 ** (days / half) if days is not None and days >= 0 else 0.0
+
+
+def score_program(k, prog, meta, recent):
+    """recent[k] = list of scope-add event dates (last 60d) for this program."""
+    m = meta.get(k, {})
+    today = NOW.timestamp()
+
+    def age(d):
+        try:
+            return (today - datetime.fromisoformat(d).replace(tzinfo=timezone.utc).timestamp()) / 86400
+        except (TypeError, ValueError, AttributeError):
+            return None
+
+    scope = prog.get("scope", [])
+    wild = sum(1 for a in scope if "*" in a)
+    doms = sum(1 for a in scope if "*" not in a and re.search(r"[a-z]\.[a-z]{2,}", a, re.I))
+
+    # fresh: most recent of launch or scope change; 21-day half-life
+    last = max([d for d in (m.get("first"), m.get("upd"), m.get("back")) if d], default=None)
+    fresh = _decay(age(last), 21)
+
+    # momentum: number of scope-additions in the last 60 days, log-saturated
+    adds = recent.get(k, [])
+    momentum = min(1.0, math.log1p(len(adds)) / math.log(8)) if adds else 0.0
+
+    # surface: wildcards open many hosts and are worth the most
+    surface = min(1.0, (wild * 3 + doms + max(0, len(scope) - wild - doms) * 0.4) / 25)
+
+    # reward: normalized; H1 public data lacks amounts (bounty==1 → neutral 0.5)
+    b = prog.get("bounty", 0)
+    reward = 0.5 if b == 1 else min(1.0, math.log1p(b) / math.log(20001)) if b else 0.15
+
+    # unsaturated: newer programs are less picked-over; unknown/old age → low
+    a0 = age(m.get("first"))
+    unsat = 1.0 if a0 is None and last else _decay(a0, 120) if a0 is not None else 0.3
+    if prog.get("priv"):
+        unsat = 1.0  # private invites have far less competition
+
+    parts = {"fresh": fresh, "momentum": momentum, "surface": surface, "reward": reward, "unsaturated": unsat}
+    total = round(sum(HUNT_W[f] * v for f, v in parts.items()), 1)
+    why = []
+    if fresh > 0.4:
+        why.append(f"changed ~{int(age(last))}d ago" if last else "")
+    if adds:
+        why.append(f"{len(adds)} scope add(s)/60d")
+    if wild:
+        why.append(f"{wild} wildcard(s)")
+    if prog.get("priv"):
+        why.append("private invite")
+    if b > 1:
+        why.append(f"up to ${b:,}")
+    return {"score": total, "parts": {f: round(v, 2) for f, v in parts.items()}, "why": [w for w in why if w]}
+
+
+def score_all(new, meta, feed):
+    recent = {}
+    floor = _days_ago(60)
+    for e in feed:
+        if e["t"] == "scope+" and e["d"] >= floor:
+            recent.setdefault(e["k"], []).append(e["d"])
+    return {k: score_program(k, p, meta, recent) for k, p in new.items()}
 
 
 # ---------- main ----------
@@ -328,7 +660,9 @@ def main():
     feed = events + [e for e in feed if e not in events]
     feed.sort(key=lambda e: e["d"], reverse=True)
     save(CHANGES, feed)
-    slim = {k: {**{f: v for f, v in p.items() if f != "oos"}, **meta.get(k, {})} for k, p in new.items()}
+    hunt = score_all(new, meta, feed)
+    slim = {k: {**{f: v for f, v in p.items() if f != "oos"}, **meta.get(k, {}), "hunt": hunt[k]["score"],
+                "parts": hunt[k]["parts"], "hy": hunt[k]["why"]} for k, p in new.items()}
     paused = {k: m for k, m in meta.items() if m.get("gone") and m["gone"] >= _days_ago(FEED_DAYS) and k not in new}
     save(PROGS, {"updated": NOW.isoformat(timespec="minutes"), "programs": slim, "paused": paused})
     save(SNAP, new)

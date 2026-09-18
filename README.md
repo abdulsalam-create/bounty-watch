@@ -26,6 +26,26 @@ Edit `watchlist.json`, or use the ☆ buttons on the dashboard after you save a 
 
 Changing the watchlist triggers a scan, which records a baseline for new entries.
 
+
+## Hunt score
+Every program gets a 0–100 **hunt score** (see the 🎯 tab) ranking how likely it is to hold fresh, under-hunted attack surface. It is an additive model over signals this tool actually collects:
+
+| Signal | Weight | Why it matters |
+|---|---|---|
+| Freshness | 34 | days since launch or last scope change (21-day half-life) — recent surface is least picked-over |
+| New-surface momentum | 24 | scope additions in the last 60 days |
+| Attack surface | 18 | wildcards count most, then domains, then single assets |
+| Reward | 14 | max bounty, normalized per platform |
+| Low saturation | 10 | newer + private programs face less competition |
+
+Unlike a multiplicative score, one weak signal never zeroes a strong target.
+
+## What the watchlist checks detect
+For each watchlist program, every 6 hours: frontend **deploys** (new/removed JS bundles, server/stack changes), **new features** (new API endpoints, GraphQL operations and feature flags mined from changed JS), **changelog** updates, **new subdomains** (crt.sh) with a **liveness + subdomain-takeover** check, and **mobile app version** bumps.
+
+## Private programs (optional)
+Add repo secrets to include your private invites: `H1_API_USER` + `H1_API_TOKEN` (HackerOne), `INTIGRITI_TOKEN` (Intigriti researcher API). Absent or invalid tokens are ignored and never break the public scan.
+
 ## Running
 - Automatic: runs every 6 hours (00:17, 06:17, 12:17, 18:17 UTC) through `.github/workflows/scan.yml`.
 - Manual: **Actions → daily-scan → Run workflow**, or run `python scan.py` locally (stdlib only).

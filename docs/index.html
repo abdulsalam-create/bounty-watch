@@ -18,6 +18,7 @@
   <button data-t="feed">Changes feed</button>
   <button data-t="all">All programs</button>
   <button data-t="recent">Recently updated</button>
+  <button data-t="hunt">🎯 Hunt score</button>
   <button data-t="paused">Paused / resumed</button>
   <button data-t="watch">Watchlist</button>
   <button data-t="settings">Settings</button>
@@ -25,7 +26,7 @@
 <div class="bar" id="bar">
   <input type="search" id="q" placeholder="Filter by name, handle, asset…">
   <select id="plat"><option value="">All platforms</option><option value="h1">HackerOne</option><option value="bc">Bugcrowd</option><option value="ywh">YesWeHack</option><option value="it">Intigriti</option></select>
-  <select id="kind"><option value="">All change types</option><option>new</option><option>suspended</option><option>resumed</option><option>scope+</option><option>scope-</option><option>deploy</option><option>subdomain</option></select>
+  <select id="kind"><option value="">All change types</option><option>new</option><option>suspended</option><option>resumed</option><option>scope+</option><option>scope-</option><option>deploy</option><option>subdomain</option><option>feature</option><option>changelog</option><option>live-host</option><option>takeover</option><option>appversion</option></select>
   <select id="stype" title="Programs whose scope includes this asset type"></select>
   <select id="sort"><option value="first">Newest programs first</option><option value="upd">Recently updated first</option><option value="bounty">Highest bounty</option><option value="name">Name A–Z</option></select>
   <select id="since"><option value="">Any time</option><option value="1">Last 24h</option><option value="7">Last 7 days</option><option value="30">Last 30 days</option><option value="90">Last 90 days</option></select>
@@ -94,6 +95,7 @@ function render(){
   $("#bar").hidden = tab === "settings";
   $("#kind").hidden = tab !== "feed";
   $("#sort").hidden = !["all","watch","recent"].includes(tab);
+  $("#stype").hidden = tab === "feed" || tab === "settings" || tab === "paused";
   let html = [];
   if(tab === "settings"){
     html = [`<div class="row"><b>Watchlist editing</b><p class="mut">Create a <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">fine-grained token</a> with access to <code>${REPO}</code> only and <i>Contents: Read and write</i>. It is stored only in this browser.</p>
@@ -109,6 +111,19 @@ function render(){
     html.push(`<h3>Recently resumed (${back.length})</h3><p class="mut">Programs that came back after a pause. These are not counted as new programs.</p>`);
     back.slice(0, limit).forEach(k => html.push(progRow(k, P[k], `Resumed ${P[k].back}${P[k].gap!=null?` after ${P[k].gap} day(s) paused`:""}`).replace('<div class="top">', `<div class="top">${flap(P[k])}`)));
     $("#more").hidden = Math.max(gone.length, back.length) <= limit;
+  } else if(tab === "hunt"){
+    const since = cutoff();
+    const parts = {fresh:"freshness",momentum:"new-surface momentum",surface:"attack surface",reward:"reward",unsaturated:"low saturation"};
+    const keys = Object.keys(P).filter(k => P[k].hunt!=null && (!since || (P[k].upd||P[k].first||"") >= since)
+      && (!$("#stype").value || typeMatch(P[k].scope||[], $("#stype").value)) && match(k, P[k].name+" "+P[k].scope.join(" ")));
+    keys.sort((a,b)=>P[b].hunt-P[a].hunt);
+    if(!$("#q").value && !since) html.push(`<p class="mut">Ranked by likelihood of fresh, under-hunted attack surface — recency and new-scope momentum weigh most. ${keys.length} scored programs.</p>`);
+    keys.slice(0, limit).forEach(k => {
+      const p = P[k], pr = p.parts||{};
+      const bars = Object.keys(parts).map(f=>`<span>${parts[f]} ${Math.round((pr[f]||0)*100)}%</span>`).join("");
+      html.push(progRow(k, p, (p.hy||[]).join(" · ")).replace('</details>', `</details>`).replace('<div class="x">', `<div class="parts">${bars}</div><div class="x">`));
+    });
+    $("#more").hidden = keys.length <= limit;
   } else if(tab === "all" || tab === "watch" || tab === "recent"){
     const srt = $("#sort").value, since = cutoff(), fld = srt === "first" ? "first" : "upd";
     const keys = Object.keys(P).filter(k => (tab!=="watch" || W.includes(k)) && (tab!=="recent" || P[k].upd)
