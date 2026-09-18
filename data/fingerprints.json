@@ -1,8 +1,6 @@
 {
  "bc:linktree-mbb-og": {
-  "apps": {
-   "https://apps.apple.com/au/app/plann-preview-for-instagram/id1106201141": "iOS 14.21"
-  },
+  "apps": {},
   "chlog": {
    "https://album.link/blog/changelog": "72fcf375e5c6",
    "https://album.link/changelog": "72fcf375e5c6",
@@ -115,20 +113,6 @@
     "powered": "Next.js",
     "server": "",
     "title": "Songlink/Odesli"
-   },
-   "https://apps.apple.com/au/app/plann-preview-for-instagram/id1106201141": {
-    "eps": [],
-    "gen": "",
-    "hash": "120cddc1cd4b",
-    "js": [
-     "index~BJysNwjVFa.js"
-    ],
-    "jsurls": [
-     "https://apps.apple.com/assets/index~BJysNwjVFa.js"
-    ],
-    "powered": "",
-    "server": "daiquiri/5",
-    "title": "\u200ePlann: Preview for Instagram App - App\u00a0Store"
    },
    "https://artist.link": {
     "eps": [],
@@ -301,16 +285,6 @@
     "powered": "Next.js",
     "server": "",
     "title": "Songlink/Odesli"
-   },
-   "https://play.google.com/store/search?q=plann&c=apps": {
-    "eps": [],
-    "gen": "",
-    "hash": "5ab50fa862b5",
-    "js": [],
-    "jsurls": [],
-    "powered": "",
-    "server": "ESF",
-    "title": ""
    },
    "https://playlist.link": {
     "eps": [],
@@ -573,16 +547,8 @@
   }
  },
  "bc:pinterest": {
-  "apps": {
-   "https://apps.apple.com/us/app/pinterest/id429047995": "iOS 14.36",
-   "https://apps.apple.com/us/app/save-to-pinterest/id6473649042": "iOS 6.13.1",
-   "https://apps.apple.com/us/app/shuffles-by-pinterest/id1573869498": "iOS 3.7"
-  },
+  "apps": {},
   "chlog": {
-   "https://github.com/release-notes": "4b835d4a2323",
-   "https://github.com/updates": "9dc3e4159036",
-   "https://github.com/whats-new": "95f56b610a03",
-   "https://github.com/whatsnew": "c5fdc0b07bd9",
    "https://microsoftedge.microsoft.com/blog/changelog": "64dc604e0e67",
    "https://microsoftedge.microsoft.com/changelog": "64dc604e0e67",
    "https://microsoftedge.microsoft.com/docs/changelog": "64dc604e0e67",
@@ -692,130 +658,8 @@
    "flag:flag-spam"
   ],
   "fp": {
-   "https://addons.mozilla.org/en-US/firefox/addon/pinterest/": {
-    "eps": [],
-    "gen": "",
-    "hash": "965959ee3bad",
-    "js": [
-     "amo-4a760a366fe7c4444185.js",
-     "gtm.js"
-    ],
-    "jsurls": [
-     "https://addons.mozilla.org/static-frontend/amo-4a760a366fe7c4444185.js",
-     "https://www.googletagmanager.com/gtm.js"
-    ],
-    "powered": "",
-    "server": "",
-    "title": "Pinterest Save Button \u2013 Get this Extension for \ud83e\udd8a Firefox (en-US)"
-   },
    "https://api.pinterest.com": {
     "err": "HTTPError"
-   },
-   "https://apps.apple.com/us/app/pinterest/id429047995": {
-    "eps": [],
-    "gen": "",
-    "hash": "a3fbf97c7b95",
-    "js": [
-     "index~BJysNwjVFa.js"
-    ],
-    "jsurls": [
-     "https://apps.apple.com/assets/index~BJysNwjVFa.js"
-    ],
-    "powered": "",
-    "server": "daiquiri/5",
-    "title": "\u200ePinterest App - App Store"
-   },
-   "https://apps.apple.com/us/app/save-to-pinterest/id6473649042": {
-    "eps": [],
-    "gen": "",
-    "hash": "fbe934555eff",
-    "js": [
-     "index-legacy~C0B4nymZUr.js",
-     "index~BJysNwjVFa.js",
-     "polyfills-legacy~DDG_j-HSI3.js"
-    ],
-    "jsurls": [
-     "https://apps.apple.com/assets/index-legacy~C0B4nymZUr.js",
-     "https://apps.apple.com/assets/index~BJysNwjVFa.js",
-     "https://apps.apple.com/assets/polyfills-legacy~DDG_j-HSI3.js"
-    ],
-    "powered": "",
-    "server": "daiquiri/5",
-    "title": "\u200eSave to Pinterest App - App Store"
-   },
-   "https://apps.apple.com/us/app/shuffles-by-pinterest/id1573869498": {
-    "eps": [],
-    "gen": "",
-    "hash": "d44c68e47f63",
-    "js": [
-     "index~BJysNwjVFa.js"
-    ],
-    "jsurls": [
-     "https://apps.apple.com/assets/index~BJysNwjVFa.js"
-    ],
-    "powered": "",
-    "server": "daiquiri/5",
-    "title": "\u200eShuffles by Pinterest App - App Store"
-   },
-   "https://chrome.google.com/webstore/detail/pinterest-save-button/gpdjojdkbbmdfjfahjcgigfpmkopogic?hl=en": {
-    "eps": [],
-    "gen": "",
-    "hash": "54e4055f8358",
-    "js": [
-     "js",
-     "m=_b,_tp"
-    ],
-    "jsurls": [
-     "https://www.googletagmanager.com/gtag/js",
-     "https://www.gstatic.com/_/mss/boq-chrome-webstore/_/js/k=boq-chrome-webstore.ChromeWebStoreConsumerFeUi.en.iQX5iYTX6rc.2018.O/am=AAAEAAAAAJk/d=1/excm=_b,_tp,itemdetailview/ed=1/dg=0/wt=2/ujg=1/rs=AEP720LRZxukIx8mTDFhhv1VxJfh1Xt8nA/dti=1/m=_b,_tp"
-    ],
-    "powered": "",
-    "server": "ESF",
-    "title": "Save to Pinterest - Chrome Web Store"
-   },
-   "https://github.com/pinterest/": {
-    "eps": [
-     "/users/1dustindavis/hovercard",
-     "/users/cenoura/hovercard",
-     "/users/coderfreestyle/hovercard",
-     "/users/ernestmama/hovercard",
-     "/users/fishcakez/hovercard",
-     "/users/fvgs/hovercard",
-     "/users/jackhsu978/hovercard",
-     "/users/jennyscript/hovercard",
-     "/users/kevinhock/hovercard",
-     "/users/maallen/hovercard",
-     "/users/mattwilshire/hovercard",
-     "/users/nguyenhuy/hovercard",
-     "/users/pinterest/tab_counts",
-     "/users/rqueue/hovercard",
-     "/users/rushabhvaria/hovercard",
-     "/users/rv32ima/hovercard",
-     "/users/shuzhang1989/hovercard",
-     "/users/vasanthk/hovercard",
-     "/users/yongwen/hovercard"
-    ],
-    "gen": "",
-    "hash": "c98106b1028a",
-    "js": [
-     "behaviors-4db15055a11ae554.js",
-     "element-registry-aa32e1ad2137fa79.js",
-     "environment-72e51169e3a805e7.js",
-     "github-elements-6c57e2f8f22f6434.js",
-     "high-contrast-cookie-e3d808ee18eb9784.js",
-     "profile-03d7eb758b5477c7.js"
-    ],
-    "jsurls": [
-     "https://github.githubassets.com/assets/behaviors-4db15055a11ae554.js",
-     "https://github.githubassets.com/assets/element-registry-aa32e1ad2137fa79.js",
-     "https://github.githubassets.com/assets/environment-72e51169e3a805e7.js",
-     "https://github.githubassets.com/assets/github-elements-6c57e2f8f22f6434.js",
-     "https://github.githubassets.com/assets/high-contrast-cookie-e3d808ee18eb9784.js",
-     "https://github.githubassets.com/assets/profile-03d7eb758b5477c7.js"
-    ],
-    "powered": "",
-    "server": "github.com",
-    "title": "Pinterest \u00b7 GitHub"
    },
    "https://microsoftedge.microsoft.com/addons/detail/pinterest-save-button/bkgoflemacdadndiohhdnphcmdhacabg": {
     "eps": [],
@@ -976,29 +820,6 @@
     "powered": "",
     "server": "",
     "title": "Pinterest"
-   },
-   "https://play.google.com/store/apps/details?id=com.pinterest&hl=en_US&gl=US": {
-    "eps": [],
-    "gen": "",
-    "hash": "5ab50fa862b5",
-    "js": [],
-    "jsurls": [],
-    "powered": "",
-    "server": "ESF",
-    "title": ""
-   },
-   "https://play.google.com/store/apps/details?id=com.pinterest.shuffles": {
-    "eps": [],
-    "gen": "",
-    "hash": "5ab50fa862b5",
-    "js": [],
-    "jsurls": [],
-    "powered": "",
-    "server": "ESF",
-    "title": ""
-   },
-   "https://play.google.com/store/apps/details?id=com.pinterest.twa&hl=en_US&gl=US": {
-    "err": "HTTPError"
    },
    "https://www.shffls.com": {
     "eps": [],

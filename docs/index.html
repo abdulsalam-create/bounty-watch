@@ -85,10 +85,17 @@ function progRow(k, p, note){
     ${note?`<div class="x">${esc(note)}</div>`:""}
     ${sc.length?`<details><summary>${sc.length} in-scope assets · ${typeSummary(sc)}</summary><ul>${sc.map(a=>`<li>${esc(a)}</li>`).join("")}</ul></details>`:""}</div>`;
 }
+function chips(label, arr, cls){
+  return (arr && arr.length) ? `<div class="chips"><span class="mut">${label}:</span>${arr.map(a=>`<code class="chip ${cls}">${esc(a)}</code>`).join("")}</div>` : "";
+}
 function evRow(e){
+  // new-feature events carry the actual new endpoints / GraphQL ops / feature flags
+  const feat = e.t === "feature" ? chips("new endpoints", e.api, "ep") + chips("GraphQL", e.gql, "gql") + chips("feature flags", e.flags, "flag")
+    : (e.t === "subdomain" || e.t === "live-host") ? chips(e.t === "live-host" ? "live" : "new subdomains", e.hosts || e.subs, "sub") : "";
+  const detail = e.t === "feature" ? `<div class="x"><b>New features detected</b> from a changed JS bundle</div>` : `<div class="x">${esc(e.x)}</div>`;
   return `<div class="row"><div class="top"><span class="tag t-${esc(e.t)}">${esc(e.t)}</span><a href="${esc(e.u)}" target="_blank" rel="noopener">${esc(e.n)}</a>
     <span class="tag">${esc(e.k)}</span><span class="mut">${esc(e.d)}</span>
-    <button class="star" data-k="${esc(e.k)}">${W.includes(e.k)?"★":"☆"}</button></div><div class="x">${esc(e.x)}</div></div>`;
+    <button class="star" data-k="${esc(e.k)}">${W.includes(e.k)?"★":"☆"}</button></div>${detail}${feat}</div>`;
 }
 function cutoff(){ const d = +$("#since").value; return d ? new Date(Date.now()-d*864e5).toISOString().slice(0,10) : ""; }
 function render(){

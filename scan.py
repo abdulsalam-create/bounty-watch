@@ -186,6 +186,18 @@ def _priv_h1_scope(handle, hdr, attrs):
 
 # ---------- watchlist checks ----------
 
+# Shared third-party platforms: an asset hosted here is a repo/app-store/marketplace
+# listing, not the program's own site. Fetching them would report the PLATFORM's
+# changelog and JS (e.g. github.com's), never the target's, so skip them here.
+EXCLUDE_HOSTS = (
+    "github.com", "gitlab.com", "bitbucket.org", "sourceforge.net",
+    "play.google.com", "apps.apple.com", "itunes.apple.com", "appgallery.huawei.com",
+    "chrome.google.com", "microsoftedge.microsoft.com", "addons.mozilla.org",
+    "npmjs.com", "pypi.org", "rubygems.org", "hub.docker.com", "packagist.org",
+    "apps.shopify.com", "marketplace.atlassian.com", "workspace.google.com",
+)
+
+
 def web_targets(scope):
     urls = []
     for a in scope:
@@ -194,7 +206,11 @@ def web_targets(scope):
             a = a[2:]
         if not re.match(r"^(https?://)?[a-z0-9.-]+\.[a-z]{2,}(/\S*)?$", a, re.I):
             continue
-        urls.append(a if a.startswith("http") else "https://" + a)
+        url = a if a.startswith("http") else "https://" + a
+        host = re.sub(r"^https?://", "", url).split("/")[0].lower()
+        if any(host == h or host.endswith("." + h) for h in EXCLUDE_HOSTS):
+            continue
+        urls.append(url)
     return sorted(set(urls))[:MAX_URLS]
 
 
