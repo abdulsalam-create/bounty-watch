@@ -23,8 +23,8 @@ input[type=search]{flex:1;min-width:180px}
 .row .top{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .row a{color:var(--acc);text-decoration:none;font-weight:600}
 .tag{font-size:11px;padding:1px 6px;border-radius:4px;border:1px solid var(--line);color:var(--mut)}
-.t-new{color:var(--new);border-color:var(--new)}.t-closed,.t-scope-{color:var(--rem);border-color:var(--rem)}
-.t-scope\+{color:var(--new);border-color:var(--new)}.t-deploy{color:var(--dep);border-color:var(--dep)}.t-subdomain{color:var(--sub);border-color:var(--sub)}
+.t-new{color:var(--new);border-color:var(--new)}.t-suspended,.t-scope-{color:var(--rem);border-color:var(--rem)}
+.t-scope\+{color:var(--new);border-color:var(--new)}.t-resumed{color:var(--acc);border-color:var(--acc)}.t-deploy{color:var(--dep);border-color:var(--dep)}.t-subdomain{color:var(--sub);border-color:var(--sub)}
 .x{color:var(--mut);word-break:break-word;margin-top:4px}
 .star{margin-left:auto;background:none;border:1px solid var(--line);border-radius:6px;cursor:pointer;color:var(--sub);padding:2px 8px;font:inherit}
 details summary{cursor:pointer;color:var(--mut);margin-top:4px}
@@ -44,13 +44,14 @@ details ul{margin:4px 0;padding-left:18px;max-height:240px;overflow:auto;word-br
   <button data-t="feed">Changes feed</button>
   <button data-t="all">All programs</button>
   <button data-t="recent">Recently updated</button>
+  <button data-t="paused">Paused / resumed</button>
   <button data-t="watch">Watchlist</button>
   <button data-t="settings">Settings</button>
 </nav>
 <div class="bar" id="bar">
   <input type="search" id="q" placeholder="Filter by name, handle, asset…">
   <select id="plat"><option value="">All platforms</option><option value="h1">HackerOne</option><option value="bc">Bugcrowd</option><option value="ywh">YesWeHack</option><option value="it">Intigriti</option></select>
-  <select id="kind"><option value="">All change types</option><option>new</option><option>closed</option><option>scope+</option><option>scope-</option><option>deploy</option><option>subdomain</option></select>
+  <select id="kind"><option value="">All change types</option><option>new</option><option>suspended</option><option>resumed</option><option>scope+</option><option>scope-</option><option>deploy</option><option>subdomain</option></select>
   <select id="sort"><option value="first">Newest programs first</option><option value="upd">Recently updated first</option><option value="bounty">Highest bounty</option><option value="name">Name A–Z</option></select>
   <select id="since"><option value="">Any time</option><option value="1">Last 24h</option><option value="7">Last 7 days</option><option value="30">Last 30 days</option><option value="90">Last 90 days</option></select>
   <label class="mut"><input type="checkbox" id="mine"> watchlist only</label>
@@ -64,12 +65,12 @@ const PNAME = {h1:"HackerOne",bc:"Bugcrowd",ywh:"YesWeHack",it:"Intigriti"};
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const ls = {get(k){try{return localStorage.getItem(k)}catch{return null}}, set(k,v){try{v?localStorage.setItem(k,v):localStorage.removeItem(k)}catch{}}};
-let P = {}, F = [], W = [], wSha = null, tab = "new", limit = 100;
+let P = {}, PZ = {}, F = [], W = [], wSha = null, tab = "new", limit = 100;
 
 async function init(){
   const bust = "?v=" + Date.now();
   const [p, f] = await Promise.all([fetch("data/programs.json"+bust).then(r=>r.json()), fetch("data/changes.json"+bust).then(r=>r.json()).catch(()=>[])]);
-  P = p.programs; F = f;
+  P = p.programs; PZ = p.paused || {}; F = f;
   $("#meta").textContent = `${Object.keys(P).length} programs · updated ${p.updated.replace("T"," ")} UTC`;
   await loadWatch();
   render();
@@ -123,6 +124,15 @@ function render(){
       <input type="password" id="pat" placeholder="github_pat_…" value="${esc(ls.get("bw_pat")||"")}" style="width:100%"><p><button id="savepat" class="star" style="margin:0">Save token</button></p>
       <p class="mut">No token? Edit <a href="https://github.com/${REPO}/edit/main/watchlist.json" target="_blank" rel="noopener">watchlist.json</a> directly. Keys look like <code>h1:handle</code>, <code>bc:slug</code>, <code>ywh:slug</code>, <code>it:company/handle</code>.</p>
       <p class="mut">Run a scan now: <a href="https://github.com/${REPO}/actions/workflows/scan.yml" target="_blank" rel="noopener">Actions → daily-scan → Run workflow</a>.</p></div>`];
+  } else if(tab === "paused"){
+    const since = cutoff(), flap = m => (m.flips||0) >= 3 ? `<span class="tag t-suspended">flapping · paused ${m.flips}×</span>` : "";
+    const gone = Object.entries(PZ).filter(([k,m]) => (!since || m.gone >= since) && match(k, m.n||"")).sort((a,b)=>b[1].gone.localeCompare(a[1].gone));
+    const back = Object.keys(P).filter(k => P[k].back && (!since || P[k].back >= since) && match(k, P[k].name)).sort((a,b)=>P[b].back.localeCompare(P[a].back));
+    html.push(`<h3>Currently paused (${gone.length})</h3><p class="mut">Programs that dropped off the public list: suspended, paused, gone private or closed.</p>`);
+    gone.slice(0, limit).forEach(([k,m]) => html.push(`<div class="row"><div class="top"><span class="tag t-suspended">paused</span><a href="${esc(m.u)}" target="_blank" rel="noopener">${esc(m.n||k)}</a><span class="tag">${PNAME[k.split(":")[0]]}</span><span class="tag">${esc(k)}</span>${flap(m)}<span class="mut">since ${esc(m.gone)}</span></div></div>`));
+    html.push(`<h3>Recently resumed (${back.length})</h3><p class="mut">Programs that came back after a pause. These are not counted as new programs.</p>`);
+    back.slice(0, limit).forEach(k => html.push(progRow(k, P[k], `Resumed ${P[k].back}${P[k].gap!=null?` after ${P[k].gap} day(s) paused`:""}`).replace('<div class="top">', `<div class="top">${flap(P[k])}`)));
+    $("#more").hidden = Math.max(gone.length, back.length) <= limit;
   } else if(tab === "all" || tab === "watch" || tab === "recent"){
     const srt = $("#sort").value, since = cutoff(), fld = srt === "first" ? "first" : "upd";
     const keys = Object.keys(P).filter(k => (tab!=="watch" || W.includes(k)) && (tab!=="recent" || P[k].upd)

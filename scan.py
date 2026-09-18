@@ -216,12 +216,19 @@ def ev(kind, key, prog, detail, day=TODAY):
     return {"d": day, "t": kind, "k": key, "n": prog["name"], "u": prog.get("url", ""), "x": detail}
 
 
-def diff(old, new, day=TODAY):
+def diff(old, new, meta, day=TODAY):
+    """Programs that vanish are 'suspended'; a known program that returns is 'resumed', never 'new'."""
     events = []
     for k in sorted(set(new) - set(old)):
-        events.append(ev("new", k, new[k], f"{len(new[k]['scope'])} in-scope assets", day))
+        m = meta.get(k)
+        if m is None:
+            events.append(ev("new", k, new[k], f"{len(new[k]['scope'])} in-scope assets", day))
+        else:
+            gap = _gap(m.get("gone"), day)
+            events.append(ev("resumed", k, new[k], (f"back after {gap} day(s)" if gap is not None else "back")
+                             + f"; paused {m.get('flips', 0)} time(s) so far", day))
     for k in sorted(set(old) - set(new)):
-        events.append(ev("closed", k, old[k], "program no longer listed", day))
+        events.append(ev("suspended", k, old[k], "no longer listed (suspended, paused or closed)", day))
     for k in sorted(set(new) & set(old)):
         for f, label in (("scope", "scope"), ("oos", "out-of-scope")):
             add = sorted(set(new[k][f]) - set(old[k][f]))
@@ -233,13 +240,29 @@ def diff(old, new, day=TODAY):
     return events
 
 
-def apply_meta(meta, events):
+def _gap(d0, d1):
+    try:
+        return (datetime.fromisoformat(d1) - datetime.fromisoformat(d0)).days
+    except (TypeError, ValueError):
+        return None
+
+
+def apply_meta(meta, events, current):
     for e in events:
         m = meta.setdefault(e["k"], {"first": None, "upd": None})
-        if e["t"] == "new":
+        t = e["t"]
+        if t == "new":
             m["first"] = m["first"] or e["d"]
-        if e["t"] != "closed":
             m["upd"] = max(m["upd"] or "", e["d"])
+        elif t == "suspended":
+            m.update(gone=e["d"], flips=m.get("flips", 0) + 1, n=e["n"], u=e["u"])
+        elif t == "resumed":
+            m["back"], m["gap"] = e["d"], _gap(m.get("gone"), e["d"])
+            m.pop("gone", None)
+        else:
+            m["upd"] = max(m["upd"] or "", e["d"])
+    for k in current:  # remember every program ever seen so a return is never 'new'
+        meta.setdefault(k, {"first": None, "upd": None})
 
 
 def backfill():
@@ -263,11 +286,10 @@ def backfill():
             continue
         day = until.strftime("%Y-%m-%d")
         print(f"[+] backfill {day}: {len(snap)} programs")
-        if prev is not None:
-            evs = diff(prev, snap, day)
-            apply_meta(meta, evs)
-            if n <= FEED_DAYS:
-                feed = evs + feed
+        evs = diff(prev, snap, meta, day) if prev is not None else []
+        apply_meta(meta, evs, snap)
+        if n <= FEED_DAYS:
+            feed = evs + feed
         prev = snap
     return meta, feed, prev
 
@@ -284,7 +306,7 @@ def main():
         old = old if old is not None else bf_last
     new = fetch_all()
     print(f"[+] {len(new)} programs")
-    events = diff(old, new) if old is not None else []
+    events = diff(old, new, meta) if old is not None else []
 
     for k in sorted(watch):
         if k in new:
@@ -294,16 +316,22 @@ def main():
         if k not in watch:
             del fps[k]
 
-    apply_meta(meta, events)
+    apply_meta(meta, events, new)
     feed = events + [e for e in feed if e not in events]
     feed.sort(key=lambda e: e["d"], reverse=True)
     save(CHANGES, feed)
     slim = {k: {**{f: v for f, v in p.items() if f != "oos"}, **meta.get(k, {})} for k, p in new.items()}
-    save(PROGS, {"updated": NOW.isoformat(timespec="minutes"), "programs": slim})
+    paused = {k: m for k, m in meta.items() if m.get("gone") and m["gone"] >= _days_ago(FEED_DAYS) and k not in new}
+    save(PROGS, {"updated": NOW.isoformat(timespec="minutes"), "programs": slim, "paused": paused})
     save(SNAP, new)
     save(META, meta)
     save(FPS, fps, pretty=True)
     write_alert(events, watch, first=old is None)
+
+
+def _gap_from(e):
+    m = re.search(r"back after (\d+) day", e["x"])
+    return int(m.group(1)) if m else None
 
 
 def _days_ago(n):
@@ -317,9 +345,10 @@ def write_alert(events, watch, first):
         print("[i] first run: baseline recorded, no alert")
         return
     newp = [e for e in events if e["t"] == "new"]
+    back = [e for e in events if e["t"] == "resumed" and e["k"] not in watch and (_gap_from(e) or 0) >= 3]
     mine = [e for e in events if e["k"] in watch]
     other_scope = sum(1 for e in events if e["t"].startswith("scope") and e["k"] not in watch)
-    if not newp and not mine:
+    if not newp and not mine and not back:
         print("[i] nothing noteworthy")
         return
     line = lambda e: f"- **{e['n']}** (`{e['k']}`) {e['u']}\n  - {e['x']}"
@@ -328,13 +357,15 @@ def write_alert(events, watch, first):
         md += [f"## Watchlist changes ({len(mine)})"] + [f"{line(e)} _[{e['t']}]_" for e in mine] + [""]
     if newp:
         md += [f"## New programs ({len(newp)})"] + [line(e) for e in newp] + [""]
+    if back:
+        md += [f"## Resumed after a pause of 3+ days ({len(back)})"] + [line(e) for e in back] + [""]
     if other_scope:
         md.append(f"_{other_scope} scope changes on non-watchlist programs — see the dashboard._\n")
     md.append("Dashboard: https://abdulsalam-create.github.io/bounty-watch/\n\ncc @abdulsalam-create")
     with open(ALERT, "w", encoding="utf-8") as f:
         f.write("\n".join(md))
     with open("alert_title.txt", "w", encoding="utf-8") as f:
-        f.write(f"bounty-watch {TODAY}: {len(newp)} new programs, {len(mine)} watchlist changes")
+        f.write(f"bounty-watch {TODAY}: {len(newp)} new, {len(back)} resumed, {len(mine)} watchlist changes")
     print(f"[!] alert written: {len(newp)} new, {len(mine)} watchlist")
 
 

@@ -2,7 +2,8 @@
 
 Daily monitor for public bug bounty programs on **HackerOne, Bugcrowd, YesWeHack and Intigriti**.
 
-- **New programs**: alerts you when a program launches.
+- **New programs**: alerts you when a program launches. Programs that disappear and come back (suspensions) are tracked separately as **paused / resumed**, so they never show up as new.
+- Checks every 6 hours.
 - **Scope changes**: tracks assets added to or removed from every program's in-scope and out-of-scope lists.
 - **Watchlist infra/code checks** for the programs you pick:
   - new subdomains under wildcard scopes, from crt.sh certificate transparency (passive)
@@ -25,7 +26,7 @@ Edit `watchlist.json`, or use the ☆ buttons on the dashboard after you save a 
 Changing the watchlist triggers a scan, which records a baseline for new entries.
 
 ## Running
-- Automatic: runs daily at 06:17 UTC through `.github/workflows/scan.yml`.
+- Automatic: runs every 6 hours (00:17, 06:17, 12:17, 18:17 UTC) through `.github/workflows/scan.yml`.
 - Manual: **Actions → daily-scan → Run workflow**, or run `python scan.py` locally (stdlib only).
 - The first run only records a baseline. Alerts start from the second run.
 
