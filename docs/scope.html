@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>bounty-watch · scope changes</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main>
+<header>
+  <h1>🎯 Scope changes</h1>
+  <span><a class="navlink" href="./">← Main dashboard</a> · <span class="mut" id="meta">loading…</span></span>
+</header>
+<p class="mut">Assets added to or removed from program scopes across HackerOne, Bugcrowd, YesWeHack and Intigriti. A digest of bounty-program changes is emailed daily at about 06:17 UTC.</p>
+<div class="stats" id="stats"></div>
+<div class="bar">
+  <input type="search" id="q" placeholder="Filter by program, handle or asset…">
+  <select id="plat"><option value="">All platforms</option><option value="h1">HackerOne</option><option value="bc">Bugcrowd</option><option value="ywh">YesWeHack</option><option value="it">Intigriti</option></select>
+  <select id="dir"><option value="">Added + removed</option><option value="scope+">Added only</option><option value="scope-">Removed only</option></select>
+  <select id="fld"><option value="">In + out of scope</option><option value="scope">In-scope list</option><option value="out-of-scope">Out-of-scope list</option></select>
+  <select id="since"><option value="1">Last 24h</option><option value="7" selected>Last 7 days</option><option value="30">Last 30 days</option><option value="90">Last 90 days</option></select>
+  <label class="mut"><input type="checkbox" id="bb" checked> bug bounty only</label>
+</div>
+<details class="row" id="topbox"><summary><b>Most active programs</b> in this range</summary><div id="top"></div></details>
+<div id="out"></div>
+<button id="more" hidden>Show more days</button>
+</main>
+<script>
+const PNAME = {h1:"HackerOne",bc:"Bugcrowd",ywh:"YesWeHack",it:"Intigriti"};
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+let P = {}, E = [], days = 7;
+
+// Older events store assets only in the text; newer ones carry a structured list.
+function assets(e){
+  if(e.a) return e.a;
+  const i = e.x.indexOf(": "); return i < 0 ? [] : e.x.slice(i+2).replace(/ \(\+\d+ more\)$/, "").split(", ");
+}
+const field = e => e.f || (e.x.startsWith("out-of-scope") ? "out-of-scope" : "scope");
+const bounty = e => e.b ?? P[e.k]?.bounty ?? 0;
+const cutoff = n => new Date(Date.now() - n*864e5).toISOString().slice(0,10);
+
+async function init(){
+  const v = "?v=" + Date.now();
+  const [p, f] = await Promise.all([fetch("data/programs.json"+v).then(r=>r.json()), fetch("data/changes.json"+v).then(r=>r.json())]);
+  P = p.programs;
+  E = f.filter(e => e.t === "scope+" || e.t === "scope-");
+  $("#meta").textContent = `updated ${p.updated.replace("T"," ")} UTC`;
+  render();
+}
+function filtered(){
+  const q = $("#q").value.trim().toLowerCase(), pl = $("#plat").value, dir = $("#dir").value, fl = $("#fld").value;
+  const since = cutoff(+$("#since").value), bb = $("#bb").checked;
+  return E.filter(e => e.d >= since && (!pl || e.k.startsWith(pl+":")) && (!dir || e.t === dir) && (!fl || field(e) === fl)
+    && (!bb || bounty(e)) && (!q || (e.k+" "+e.n+" "+assets(e).join(" ")).toLowerCase().includes(q)));
+}
+function render(){
+  const ev = filtered();
+  const progs = new Set(ev.map(e=>e.k));
+  const nAdd = ev.filter(e=>e.t==="scope+").reduce((n,e)=>n+assets(e).length,0);
+  const nRem = ev.filter(e=>e.t==="scope-").reduce((n,e)=>n+assets(e).length,0);
+  const today = ev.filter(e=>e.d >= cutoff(1)).length;
+  $("#stats").innerHTML = [["changes", ev.length], ["programs affected", progs.size], ["assets added", nAdd], ["assets removed", nRem], ["changes in last 24h", today]]
+    .map(([l,n]) => `<div class="stat"><b>${n.toLocaleString()}</b><span class="mut">${l}</span></div>`).join("");
+
+  const cnt = {}; ev.forEach(e => cnt[e.k] = (cnt[e.k]||0) + 1);
+  $("#top").innerHTML = Object.entries(cnt).sort((a,b)=>b[1]-a[1]).slice(0,10).map(([k,n]) =>
+    `<div class="x">${n} change(s) · <a href="#" data-q="${esc(k)}">${esc(P[k]?.name || k)}</a> <span class="tag">${esc(k)}</span></div>`).join("") || `<div class="x">None</div>`;
+
+  // group by day, then by program
+  const byDay = {};
+  ev.forEach(e => ((byDay[e.d] ??= {})[e.k] ??= []).push(e));
+  const dayKeys = Object.keys(byDay).sort().reverse();
+  $("#out").innerHTML = dayKeys.slice(0, days).map(d => {
+    const pk = Object.keys(byDay[d]);
+    return `<div class="day">${esc(d)} <span class="mut">· ${pk.length} program(s)</span></div>` + pk.map(k => {
+      const es = byDay[d][k], e0 = es[0], b = bounty(e0);
+      const lists = es.map(e => `<div class="x">${field(e) === "out-of-scope" ? "Out-of-scope list" : "In-scope list"}:</div>
+        <ul class="${e.t==="scope+"?"add":"rem"}">${assets(e).map(a=>`<li>${esc(a)}</li>`).join("")}</ul>`).join("");
+      return `<div class="row"><div class="top"><a href="${esc(e0.u)}" target="_blank" rel="noopener">${esc(e0.n)}</a>
+        <span class="tag">${PNAME[k.split(":")[0]]}</span><span class="tag">${esc(k)}</span>
+        ${b ? `<span class="tag t-new">${b>1?"$"+b.toLocaleString():"bounty"}</span>` : `<span class="tag">VDP</span>`}</div>${lists}</div>`;
+    }).join("");
+  }).join("") || `<div class="empty">No scope changes match these filters.</div>`;
+  $("#more").hidden = dayKeys.length <= days;
+}
+["#q","#plat","#dir","#fld","#since","#bb"].forEach(s => $(s).addEventListener("input", () => { days = 7; render(); }));
+$("#more").onclick = () => { days += 7; render(); };
+$("#top").onclick = e => { const q = e.target.dataset.q; if(q){ e.preventDefault(); $("#q").value = q; render(); } };
+init().catch(e => { $("#meta").textContent = "Failed to load data: " + e; });
+</script>
+</body>
+</html>

@@ -40,3 +40,8 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: gh issue create --title "$(cat alert_title.txt)" --body-file alert.md
+      - name: Open daily scope digest issue
+        if: hashFiles('digest.md') != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh issue create --title "$(cat digest_title.txt)" --body-file digest.md

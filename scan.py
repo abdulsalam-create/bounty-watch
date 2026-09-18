@@ -16,6 +16,7 @@ SRC = os.environ.get("BW_SRC") or "https://raw.githubusercontent.com/arkadiyt/bo
 PLATFORMS = {"h1": "hackerone", "bc": "bugcrowd", "ywh": "yeswehack", "it": "intigriti"}
 SNAP, FPS, WATCH, META = "data/snapshot.json", "data/fingerprints.json", "watchlist.json", "data/meta.json"
 PROGS, CHANGES, ALERT = "docs/data/programs.json", "docs/data/changes.json", "alert.md"
+DIGEST_STATE, DIGEST, DIGEST_HOUR = "data/digest.json", "digest.md", 6  # daily scope digest after 06:00 UTC
 FEED_DAYS, MAX_URLS, TIMEOUT = 90, 25, 10
 UA = {"User-Agent": "Mozilla/5.0 (bounty-watch; +https://github.com/abdulsalam-create/bounty-watch)"}
 NOW = datetime.now(timezone.utc)
@@ -212,8 +213,15 @@ def watch_checks(key, prog, fps, events):
 
 # ---------- main ----------
 
-def ev(kind, key, prog, detail, day=TODAY):
-    return {"d": day, "t": kind, "k": key, "n": prog["name"], "u": prog.get("url", ""), "x": detail}
+def ev(kind, key, prog, detail, day=TODAY, **extra):
+    return {"d": day, "t": kind, "k": key, "n": prog["name"], "u": prog.get("url", ""), "x": detail, **extra}
+
+
+def scope_ev(kind, k, prog, label, assets, day):
+    more = f" (+{len(assets) - 20} more)" if len(assets) > 20 else ""
+    verb = "added" if kind == "scope+" else "removed"
+    return ev(kind, k, prog, f"{label} {verb}: " + ", ".join(assets[:20]) + more, day,
+              a=assets[:300], f=label, b=prog.get("bounty", 0))
 
 
 def diff(old, new, meta, day=TODAY):
@@ -234,9 +242,9 @@ def diff(old, new, meta, day=TODAY):
             add = sorted(set(new[k][f]) - set(old[k][f]))
             rem = sorted(set(old[k][f]) - set(new[k][f]))
             if add:
-                events.append(ev("scope+", k, new[k], f"{label} added: " + ", ".join(add[:20]), day))
+                events.append(scope_ev("scope+", k, new[k], label, add, day))
             if rem:
-                events.append(ev("scope-", k, new[k], f"{label} removed: " + ", ".join(rem[:20]), day))
+                events.append(scope_ev("scope-", k, new[k], label, rem, day))
     return events
 
 
@@ -327,6 +335,43 @@ def main():
     save(META, meta)
     save(FPS, fps, pretty=True)
     write_alert(events, watch, first=old is None)
+    write_digest(events)
+
+
+def write_digest(events):
+    """Queue scope changes on bounty programs; send one digest per day after DIGEST_HOUR UTC."""
+    if os.path.exists(DIGEST):
+        os.remove(DIGEST)
+    st = load(DIGEST_STATE, {"last": None, "pending": []})
+    st["pending"] += [e for e in events if e["t"] in ("scope+", "scope-") and e.get("b")]
+    if NOW.hour >= DIGEST_HOUR and st["last"] != TODAY:
+        st["last"] = TODAY
+        pend, st["pending"] = st["pending"], []
+        if pend:
+            by = {}
+            for e in pend:
+                by.setdefault(e["k"], []).append(e)
+            md = [f"# Daily scope digest {TODAY}\n",
+                  f"{len(pend)} scope change(s) across {len(by)} bug bounty program(s) since the last digest.\n",
+                  "Dashboard: https://abdulsalam-create.github.io/bounty-watch/scope.html\n"]
+            for k, evs in sorted(by.items(), key=lambda kv: -len(kv[1])):
+                e0 = evs[0]
+                md.append(f"### {e0['n']} (`{k}`)\n{e0['u']}")
+                for e in evs:
+                    sign = "➕" if e["t"] == "scope+" else "➖"
+                    items = e.get("a") or []
+                    shown = ", ".join(f"`{a}`" for a in items[:25]) + (f" (+{len(items) - 25} more)" if len(items) > 25 else "")
+                    md.append(f"- {sign} **{e.get('f', 'scope')}** {'added' if e['t'] == 'scope+' else 'removed'}: {shown}")
+                md.append("")
+            body = "\n".join(md)
+            if len(body) > 60000:
+                body = body[:60000] + "\n\n…truncated, see the dashboard for the full list."
+            with open(DIGEST, "w", encoding="utf-8") as f:
+                f.write(body + "\n\ncc @abdulsalam-create")
+            with open("digest_title.txt", "w", encoding="utf-8") as f:
+                f.write(f"Scope digest {TODAY}: {len(pend)} changes across {len(by)} bounty programs")
+            print(f"[!] digest written: {len(pend)} changes")
+    save(DIGEST_STATE, st)
 
 
 def _gap_from(e):
