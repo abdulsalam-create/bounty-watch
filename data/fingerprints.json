@@ -1,6 +1,8 @@
 {
  "bc:linktree-mbb-og": {
-  "apps": {},
+  "apps": {
+   "https://apps.apple.com/au/app/plann-preview-for-instagram/id1106201141": "iOS 14.21"
+  },
   "chlog": {
    "https://album.link/blog/changelog": "72fcf375e5c6",
    "https://album.link/changelog": "72fcf375e5c6",
@@ -547,7 +549,11 @@
   }
  },
  "bc:pinterest": {
-  "apps": {},
+  "apps": {
+   "https://apps.apple.com/us/app/pinterest/id429047995": "iOS 14.36",
+   "https://apps.apple.com/us/app/save-to-pinterest/id6473649042": "iOS 6.13.1",
+   "https://apps.apple.com/us/app/shuffles-by-pinterest/id1573869498": "iOS 3.7"
+  },
   "chlog": {
    "https://microsoftedge.microsoft.com/blog/changelog": "64dc604e0e67",
    "https://microsoftedge.microsoft.com/changelog": "64dc604e0e67",
@@ -557,7 +563,16 @@
    "https://microsoftedge.microsoft.com/releases": "64dc604e0e67",
    "https://microsoftedge.microsoft.com/updates": "64dc604e0e67",
    "https://microsoftedge.microsoft.com/whats-new": "64dc604e0e67",
-   "https://microsoftedge.microsoft.com/whatsnew": "64dc604e0e67"
+   "https://microsoftedge.microsoft.com/whatsnew": "64dc604e0e67",
+   "https://pinterest.com/blog/changelog": "9b9ac080cefc",
+   "https://pinterest.com/changelog": "b05e8e01584a",
+   "https://pinterest.com/docs/changelog": "275d6fba3076",
+   "https://pinterest.com/news/product": "9b9ac080cefc",
+   "https://pinterest.com/release-notes": "b05e8e01584a",
+   "https://pinterest.com/releases": "b05e8e01584a",
+   "https://pinterest.com/updates": "b05e8e01584a",
+   "https://pinterest.com/whats-new": "9b102b5affda",
+   "https://pinterest.com/whatsnew": "b05e8e01584a"
   },
   "eps": [
    "/account",
