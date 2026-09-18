@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>bounty-watch</title>
+<style>
+:root{--bg:#f6f7f9;--card:#fff;--fg:#1b1f24;--mut:#5e6772;--line:#e2e5ea;--acc:#2563eb;--new:#16a34a;--rem:#dc2626;--dep:#9333ea;--sub:#d97706}
+@media (prefers-color-scheme:dark){:root{--bg:#0f1115;--card:#171a20;--fg:#e6e8eb;--mut:#9aa3ad;--line:#2a2f37;--acc:#60a5fa;--new:#4ade80;--rem:#f87171;--dep:#c084fc;--sub:#fbbf24}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.5 system-ui,-apple-system,Segoe UI,sans-serif}
+main{max-width:1100px;margin:auto;padding:16px}
+header{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:baseline;justify-content:space-between}
+h1{font-size:20px;margin:0}
+.mut{color:var(--mut)}
+nav{display:flex;gap:4px;flex-wrap:wrap;margin:16px 0 12px;border-bottom:1px solid var(--line)}
+nav button{background:none;border:0;border-bottom:2px solid transparent;padding:8px 12px;color:var(--mut);font:inherit;cursor:pointer}
+nav button.on{color:var(--fg);border-color:var(--acc);font-weight:600}
+.bar{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+input,select{font:inherit;padding:6px 10px;border:1px solid var(--line);border-radius:6px;background:var(--card);color:var(--fg)}
+input[type=search]{flex:1;min-width:180px}
+.row{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:10px 12px;margin-bottom:8px}
+.row .top{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.row a{color:var(--acc);text-decoration:none;font-weight:600}
+.tag{font-size:11px;padding:1px 6px;border-radius:4px;border:1px solid var(--line);color:var(--mut)}
+.t-new{color:var(--new);border-color:var(--new)}.t-closed,.t-scope-{color:var(--rem);border-color:var(--rem)}
+.t-scope\+{color:var(--new);border-color:var(--new)}.t-deploy{color:var(--dep);border-color:var(--dep)}.t-subdomain{color:var(--sub);border-color:var(--sub)}
+.x{color:var(--mut);word-break:break-word;margin-top:4px}
+.star{margin-left:auto;background:none;border:1px solid var(--line);border-radius:6px;cursor:pointer;color:var(--sub);padding:2px 8px;font:inherit}
+details summary{cursor:pointer;color:var(--mut);margin-top:4px}
+details ul{margin:4px 0;padding-left:18px;max-height:240px;overflow:auto;word-break:break-all}
+.empty{padding:24px;text-align:center;color:var(--mut)}
+#more{display:block;margin:8px auto}
+</style>
+</head>
+<body>
+<main>
+<header>
+  <h1>🛰️ bounty-watch</h1>
+  <span class="mut" id="meta">loading…</span>
+</header>
+<nav id="tabs">
+  <button data-t="new" class="on">New programs</button>
+  <button data-t="feed">Changes feed</button>
+  <button data-t="all">All programs</button>
+  <button data-t="watch">Watchlist</button>
+  <button data-t="settings">Settings</button>
+</nav>
+<div class="bar" id="bar">
+  <input type="search" id="q" placeholder="Filter by name, handle, asset…">
+  <select id="plat"><option value="">All platforms</option><option value="h1">HackerOne</option><option value="bc">Bugcrowd</option><option value="ywh">YesWeHack</option><option value="it">Intigriti</option></select>
+  <select id="kind"><option value="">All change types</option><option>new</option><option>closed</option><option>scope+</option><option>scope-</option><option>deploy</option><option>subdomain</option></select>
+  <label class="mut"><input type="checkbox" id="mine"> watchlist only</label>
+</div>
+<div id="out"></div>
+<button id="more" hidden>Show more</button>
+</main>
+<script>
+const REPO = "abdulsalam-create/bounty-watch";
+const PNAME = {h1:"HackerOne",bc:"Bugcrowd",ywh:"YesWeHack",it:"Intigriti"};
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const ls = {get(k){try{return localStorage.getItem(k)}catch{return null}}, set(k,v){try{v?localStorage.setItem(k,v):localStorage.removeItem(k)}catch{}}};
+let P = {}, F = [], W = [], wSha = null, tab = "new", limit = 100;
+
+async function init(){
+  const bust = "?v=" + Date.now();
+  const [p, f] = await Promise.all([fetch("data/programs.json"+bust).then(r=>r.json()), fetch("data/changes.json"+bust).then(r=>r.json()).catch(()=>[])]);
+  P = p.programs; F = f;
+  $("#meta").textContent = `${Object.keys(P).length} programs · updated ${p.updated.replace("T"," ")} UTC`;
+  await loadWatch();
+  render();
+}
+async function loadWatch(){
+  try{
+    const r = await fetch(`https://api.github.com/repos/${REPO}/contents/watchlist.json`, {headers: auth(), cache:"no-store"});
+    const j = await r.json(); wSha = j.sha; W = JSON.parse(atob(j.content.replace(/\n/g,"")));
+  }catch{ W = await fetch("https://raw.githubusercontent.com/"+REPO+"/main/watchlist.json").then(r=>r.json()).catch(()=>[]); }
+}
+function auth(){ const t = ls.get("bw_pat"); return t ? {Authorization: "Bearer "+t} : {}; }
+async function toggle(k){
+  const t = ls.get("bw_pat");
+  if(!t){ alert("Add a GitHub token in Settings to edit the watchlist from here, or edit watchlist.json on GitHub."); return; }
+  const next = W.includes(k) ? W.filter(x=>x!==k) : [...W, k].sort();
+  const r = await fetch(`https://api.github.com/repos/${REPO}/contents/watchlist.json`, {method:"PUT", headers:{...auth(),"Content-Type":"application/json"},
+    body: JSON.stringify({message:`watchlist: ${W.includes(k)?"remove":"add"} ${k}`, content: btoa(JSON.stringify(next,null,1)+"\n"), sha: wSha})});
+  if(!r.ok){ alert("GitHub API error "+r.status+": "+(await r.text()).slice(0,200)); return; }
+  wSha = (await r.json()).content.sha; W = next; render();
+}
+function match(k, extra){
+  const q = $("#q").value.trim().toLowerCase(), pl = $("#plat").value;
+  if(pl && !k.startsWith(pl+":")) return false;
+  if($("#mine").checked && !W.includes(k)) return false;
+  return !q || (k + " " + extra).toLowerCase().includes(q);
+}
+function progRow(k, p, note){
+  const on = W.includes(k);
+  const sc = (p?.scope||[]);
+  return `<div class="row"><div class="top"><a href="${esc(p?.url)}" target="_blank" rel="noopener">${esc(p?.name||k)}</a>
+    <span class="tag">${PNAME[k.split(":")[0]]}</span><span class="tag">${esc(k)}</span>
+    ${p?.bounty ? `<span class="tag t-new">${p.bounty>1?"$"+p.bounty.toLocaleString():"bounty"}</span>`:`<span class="tag">VDP</span>`}
+    <button class="star" data-k="${esc(k)}">${on?"★ watching":"☆ watch"}</button></div>
+    ${note?`<div class="x">${esc(note)}</div>`:""}
+    ${sc.length?`<details><summary>${sc.length} in-scope assets</summary><ul>${sc.map(a=>`<li>${esc(a)}</li>`).join("")}</ul></details>`:""}</div>`;
+}
+function evRow(e){
+  return `<div class="row"><div class="top"><span class="tag t-${esc(e.t)}">${esc(e.t)}</span><a href="${esc(e.u)}" target="_blank" rel="noopener">${esc(e.n)}</a>
+    <span class="tag">${esc(e.k)}</span><span class="mut">${esc(e.d)}</span>
+    <button class="star" data-k="${esc(e.k)}">${W.includes(e.k)?"★":"☆"}</button></div><div class="x">${esc(e.x)}</div></div>`;
+}
+function render(){
+  $("#bar").hidden = tab === "settings";
+  $("#kind").hidden = tab !== "feed";
+  let html = [];
+  if(tab === "settings"){
+    html = [`<div class="row"><b>Watchlist editing</b><p class="mut">Create a <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">fine-grained token</a> with access to <code>${REPO}</code> only and <i>Contents: Read and write</i>. It is stored only in this browser.</p>
+      <input type="password" id="pat" placeholder="github_pat_…" value="${esc(ls.get("bw_pat")||"")}" style="width:100%"><p><button id="savepat" class="star" style="margin:0">Save token</button></p>
+      <p class="mut">No token? Edit <a href="https://github.com/${REPO}/edit/main/watchlist.json" target="_blank" rel="noopener">watchlist.json</a> directly. Keys look like <code>h1:handle</code>, <code>bc:slug</code>, <code>ywh:slug</code>, <code>it:company/handle</code>.</p>
+      <p class="mut">Run a scan now: <a href="https://github.com/${REPO}/actions/workflows/scan.yml" target="_blank" rel="noopener">Actions → daily-scan → Run workflow</a>.</p></div>`];
+  } else if(tab === "all" || tab === "watch"){
+    const keys = Object.keys(P).filter(k => (tab==="all" || W.includes(k)) && match(k, P[k].name+" "+P[k].scope.join(" ")));
+    keys.sort((a,b)=>(P[b].bounty-P[a].bounty)||P[a].name.localeCompare(P[b].name));
+    if(tab==="watch") W.filter(k=>!P[k]).forEach(k=>html.push(progRow(k,null,"Not found in current data (closed or wrong key)")));
+    keys.slice(0, limit).forEach(k=>html.push(progRow(k,P[k])));
+    $("#more").hidden = keys.length <= limit;
+  } else {
+    const kind = tab==="new" ? "new" : $("#kind").value;
+    const ev = F.filter(e => (!kind || e.t===kind) && match(e.k, e.n+" "+e.x));
+    ev.slice(0, limit).forEach(e => html.push(tab==="new" ? progRow(e.k, P[e.k], `Launched ${e.d}`) : evRow(e)));
+    $("#more").hidden = ev.length <= limit;
+  }
+  $("#out").innerHTML = html.join("") || `<div class="empty">Nothing here yet. ${tab==="new"||tab==="feed"?"Changes appear after the second daily scan.":""}</div>`;
+}
+$("#tabs").onclick = e => { const t = e.target.dataset.t; if(!t) return; tab = t; limit = 100;
+  document.querySelectorAll("#tabs button").forEach(b=>b.classList.toggle("on", b.dataset.t===t)); render(); };
+["#q","#plat","#kind","#mine"].forEach(s => $(s).addEventListener("input", ()=>{limit=100; render();}));
+$("#more").onclick = () => { limit += 200; render(); };
+$("#out").onclick = e => {
+  const s = e.target.closest(".star[data-k]"); if(s) return toggle(s.dataset.k);
+  if(e.target.id === "savepat"){ ls.set("bw_pat", $("#pat").value.trim()); loadWatch().then(()=>{alert("Saved."); render();}); }
+};
+init().catch(e => { $("#meta").textContent = "Failed to load data: " + e; });
+</script>
+</body>
+</html>
