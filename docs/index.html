@@ -117,7 +117,7 @@ function render(){
     const keys = Object.keys(P).filter(k => P[k].hunt!=null && (!since || (P[k].upd||P[k].first||"") >= since)
       && (!$("#stype").value || typeMatch(P[k].scope||[], $("#stype").value)) && match(k, P[k].name+" "+P[k].scope.join(" ")));
     keys.sort((a,b)=>P[b].hunt-P[a].hunt);
-    if(!$("#q").value && !since) html.push(`<p class="mut">Ranked by likelihood of fresh, under-hunted attack surface — recency and new-scope momentum weigh most. ${keys.length} scored programs.</p>`);
+    if(!$("#q").value && !since) html.push(`<p class="mut">Ranked by likelihood of fresh, under-hunted attack surface; recency and new-scope momentum weigh most. ${keys.length} scored programs.</p>`);
     keys.slice(0, limit).forEach(k => {
       const p = P[k], pr = p.parts||{};
       const bars = Object.keys(parts).map(f=>`<span>${parts[f]} ${Math.round((pr[f]||0)*100)}%</span>`).join("");

@@ -32,7 +32,7 @@ Every program gets a 0–100 **hunt score** (see the 🎯 tab) ranking how likel
 
 | Signal | Weight | Why it matters |
 |---|---|---|
-| Freshness | 34 | days since launch or last scope change (21-day half-life) — recent surface is least picked-over |
+| Freshness | 34 | days since launch or last scope change (21-day half-life); recent surface is least picked-over |
 | New-surface momentum | 24 | scope additions in the last 60 days |
 | Attack surface | 18 | wildcards count most, then domains, then single assets |
 | Reward | 14 | max bounty, normalized per platform |

@@ -231,7 +231,7 @@ def fingerprint(url):
     return fp
 
 
-# Paths / GraphQL ops / feature-flag names pulled from JS and HTML — new ones flag new features.
+# Paths / GraphQL ops / feature-flag names pulled from JS and HTML; new ones flag new features.
 EP_RE = re.compile(r'["\'`](/(?:api|v\d|graphql|rest|internal|admin|user|account|auth|oauth|payment|billing|webhook|gql)[\w/\-.]{0,60})["\'`]', re.I)
 GQL_RE = re.compile(r'\b(?:query|mutation)\s+([A-Za-z][A-Za-z0-9_]{3,40})\s*[({]')
 FLAG_RE = re.compile(r'["\']((?:feature|flag|ff|enable|beta)[_.-][A-Za-z0-9_.-]{2,40})["\']', re.I)
@@ -400,7 +400,7 @@ def watch_checks(key, prog, fps, events):
         if old and not first:
             note = diff_fp(old, fp)
             if note:
-                events.append(ev("deploy", key, prog, f"{url} — {note}"))
+                events.append(ev("deploy", key, prog, f"{url}: {note}"))
             new_bundles += sorted(set(fp.get("jsurls", [])) - set(old.get("jsurls", [])))
         elif first:
             new_bundles += fp.get("jsurls", [])
@@ -473,7 +473,7 @@ def watch_checks(key, prog, fps, events):
 # Additive 0-100 model. The edge in bug bounty is FRESH, under-hunted attack surface,
 # so recency and momentum of change dominate; static reward/breadth fill the rest.
 # Additive (not multiplicative) so one weak signal never zeroes a strong target,
-# and every input is something this dataset actually has — no fabricated SLAs.
+# and every input is something this dataset actually has, with no fabricated SLAs.
 
 HUNT_W = {"fresh": 34, "momentum": 24, "surface": 18, "reward": 14, "unsaturated": 10}
 
@@ -739,7 +739,7 @@ def write_alert(events, watch, first):
     if back:
         md += [f"## Resumed after a pause of 3+ days ({len(back)})"] + [line(e) for e in back] + [""]
     if other_scope:
-        md.append(f"_{other_scope} scope changes on non-watchlist programs — see the dashboard._\n")
+        md.append(f"_{other_scope} scope changes on non-watchlist programs; see the dashboard._\n")
     md.append("Dashboard: https://abdulsalam-create.github.io/bounty-watch/\n\ncc @abdulsalam-create")
     with open(ALERT, "w", encoding="utf-8") as f:
         f.write("\n".join(md))
