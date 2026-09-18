@@ -38,3 +38,5 @@ details ul{margin:4px 0;padding-left:18px;max-height:240px;overflow:auto;word-br
 .chip{font-size:11px;padding:1px 6px;border-radius:4px;background:var(--bg-soft,#f4f3f0);border:1px solid var(--line)}
 .chip.ep{color:#0891b2;border-color:#0891b2}.chip.gql{color:#9333ea;border-color:#9333ea}
 .chip.flag{color:#d97706;border-color:#d97706}.chip.sub{color:#2563eb;border-color:#2563eb}
+.chip.js{color:#0891b2;border-color:#0891b2;text-decoration:none}
+.chip.js:hover{background:#0891b2;color:#fff}

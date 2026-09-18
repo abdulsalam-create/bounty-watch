@@ -415,9 +415,10 @@ def watch_checks(key, prog, fps, events):
         old = state["fp"].get(url)
         if old and not first:
             note = diff_fp(old, fp)
+            bundles = sorted(set(fp.get("jsurls", [])) - set(old.get("jsurls", [])))
             if note:
-                events.append(ev("deploy", key, prog, f"{url}: {note}"))
-            new_bundles += sorted(set(fp.get("jsurls", [])) - set(old.get("jsurls", [])))
+                events.append(ev("deploy", key, prog, f"{url}: {note}", js=bundles[:20]))
+            new_bundles += bundles
         elif first:
             new_bundles += fp.get("jsurls", [])
         html_eps.update(fp.get("eps", []))
@@ -441,7 +442,7 @@ def watch_checks(key, prog, fps, events):
             parts.append(f"{len(gql)} new GraphQL op(s): " + ", ".join(gql[:10]))
         if flags:
             parts.append(f"{len(flags)} new feature flag(s): " + ", ".join(flags[:10]))
-        events.append(ev("feature", key, prog, "; ".join(parts), api=api[:60], gql=gql[:40], flags=flags[:40]))
+        events.append(ev("feature", key, prog, "; ".join(parts), api=api[:60], gql=gql[:40], flags=flags[:40], js=sorted(set(new_bundles))[:20]))
     state["eps"] = sorted(seen | eps)[:1500]
 
     roots = sorted({re.match(r"^(https?://[^/]+)", u).group(1) for u in urls if re.match(r"^https?://[^/]+", u)})[:6]
