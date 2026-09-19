@@ -714,7 +714,8 @@ def main():
 
     apply_meta(meta, events, new)
     feed = events + [e for e in feed if e not in events]
-    feed.sort(key=lambda e: e["d"], reverse=True)
+    # newest day first, and within a day the highest-value signals first (new features on top)
+    feed.sort(key=lambda e: (e["d"], -PRIORITY.get(e["t"], 0)), reverse=True)
     save(CHANGES, feed)
     hunt = score_all(new, meta, feed)
     slim = {k: {**{f: v for f, v in p.items() if f != "oos"}, **meta.get(k, {}), "hunt": hunt[k]["score"],
@@ -726,6 +727,12 @@ def main():
     save(FPS, fps, pretty=True)
     write_alert(events, watch, first=old is None)
     write_digest(events)
+    write_inscope_digest(events)
+
+
+# Ranking of change types when the feed is ordered within a day (new features first).
+PRIORITY = {"takeover": 9, "feature": 8, "live-host": 7, "subdomain": 6, "new": 5,
+            "scope+": 4, "appversion": 4, "changelog": 3, "deploy": 2, "resumed": 2, "scope-": 1, "suspended": 1}
 
 
 def write_digest(events):
@@ -764,6 +771,44 @@ def write_digest(events):
     save(DIGEST_STATE, st)
 
 
+INSCOPE_STATE, INSCOPE, INSCOPE_LABEL = "data/inscope_digest.json", "inscope.md", "scope"
+
+
+def write_inscope_digest(events):
+    """Dedicated daily email for programs that gained a NEW IN-SCOPE asset (bounty programs only)."""
+    if os.path.exists(INSCOPE):
+        os.remove(INSCOPE)
+    st = load(INSCOPE_STATE, {"last": None, "pending": []})
+    # only in-scope additions (field == 'scope'), not out-of-scope, and only paying programs
+    st["pending"] += [e for e in events if e["t"] == "scope+" and e.get("f") == INSCOPE_LABEL and e.get("b")]
+    if NOW.hour >= DIGEST_HOUR and st["last"] != TODAY:
+        st["last"] = TODAY
+        pend, st["pending"] = st["pending"], []
+        if pend:
+            by = {}
+            for e in pend:
+                by.setdefault(e["k"], []).append(e)
+            md = [f"# New in-scope assets {TODAY}\n",
+                  f"{len(by)} bug bounty program(s) added new in-scope targets since the last check.\n",
+                  "Dashboard: https://abdulsalam-create.github.io/bounty-watch/#inscope\n"]
+            for k, evs in sorted(by.items(), key=lambda kv: -sum(len(e.get("a") or []) for e in kv[1])):
+                e0 = evs[0]
+                assets = sorted({a for e in evs for a in (e.get("a") or [])})
+                md.append(f"### {e0['n']} (`{k}`){'  💰 $' + str(e0['b']) if e0['b'] > 1 else ''}\n{e0['u']}")
+                md.append("- new in-scope: " + ", ".join(f"`{a}`" for a in assets[:40])
+                          + (f" (+{len(assets) - 40} more)" if len(assets) > 40 else ""))
+                md.append("")
+            body = "\n".join(md)
+            if len(body) > 60000:
+                body = body[:60000] + "\n\n…truncated, see the dashboard."
+            with open(INSCOPE, "w", encoding="utf-8") as f:
+                f.write(body + "\n\ncc @abdulsalam-create")
+            with open("inscope_title.txt", "w", encoding="utf-8") as f:
+                f.write(f"New in-scope {TODAY}: {len(by)} program(s) added targets")
+            print(f"[!] in-scope digest written: {len(by)} programs")
+    save(INSCOPE_STATE, st)
+
+
 def _gap_from(e):
     m = re.search(r"back after (\d+) day", e["x"])
     return int(m.group(1)) if m else None
@@ -782,12 +827,23 @@ def write_alert(events, watch, first):
     newp = [e for e in events if e["t"] == "new"]
     back = [e for e in events if e["t"] == "resumed" and e["k"] not in watch and (_gap_from(e) or 0) >= 3]
     mine = [e for e in events if e["k"] in watch]
+    # highest-value watchlist signals, surfaced at the very top of the email
+    feats = [e for e in mine if e["t"] in ("feature", "takeover")]
     other_scope = sum(1 for e in events if e["t"].startswith("scope") and e["k"] not in watch)
     if not newp and not mine and not back:
         print("[i] nothing noteworthy")
         return
     line = lambda e: f"- **{e['n']}** (`{e['k']}`) {e['u']}\n  - {e['x']}"
     md = [f"# bounty-watch report {TODAY}\n"]
+    if feats:
+        md += [f"## 🔥 New features / takeovers ({len(feats)})"]
+        for e in feats:
+            md.append(line(e))
+            if e["t"] == "feature" and e.get("api"):
+                md.append("    - new endpoints: " + ", ".join(f"`{a}`" for a in e["api"][:15]))
+            if e.get("js"):
+                md.append("    - new JS: " + ", ".join(e["js"][:5]))
+        md.append("")
     if mine:
         md += [f"## Watchlist changes ({len(mine)})"] + [f"{line(e)} _[{e['t']}]_" for e in mine] + [""]
     if newp:

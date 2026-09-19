@@ -15,6 +15,8 @@
 </header>
 <nav id="tabs">
   <button data-t="new" class="on">New programs</button>
+  <button data-t="features">🔥 New features</button>
+  <button data-t="inscope">➕ New in-scope</button>
   <button data-t="feed">Changes feed</button>
   <button data-t="all">All programs</button>
   <button data-t="recent">Recently updated</button>
@@ -49,6 +51,10 @@ async function init(){
   P = p.programs; PZ = p.paused || {}; F = f;
   $("#meta").textContent = `${Object.keys(P).length} programs · updated ${p.updated.replace("T"," ")} UTC`;
   await loadWatch();
+  const h = (location.hash || "").slice(1);
+  if(["features","inscope","feed","all","recent","hunt","paused","watch"].includes(h)){
+    tab = h; document.querySelectorAll("#tabs button").forEach(b=>b.classList.toggle("on", b.dataset.t===h));
+  }
   render();
 }
 async function loadWatch(){
@@ -149,6 +155,30 @@ function render(){
     if(tab==="watch") W.filter(k=>!P[k]).forEach(k=>html.push(progRow(k,null,"Not found in current data (closed or wrong key)")));
     keys.slice(0, limit).forEach(k=>html.push(progRow(k,P[k])));
     $("#more").hidden = keys.length <= limit;
+  } else if(tab === "features"){
+    const since = cutoff();
+    const ev = F.filter(e => (e.t==="feature"||e.t==="takeover") && (!since || e.d >= since)
+      && (!$("#plat").value || e.k.startsWith($("#plat").value+":")) && (!$("#mine").checked || W.includes(e.k))
+      && match(e.k, e.n+" "+e.x));
+    if(!$("#q").value) html.push(`<p class="mut">New code features (endpoints, GraphQL ops, feature flags) and takeovers spotted on watchlist programs. This is the freshest, least-hunted attack surface. ${ev.length} in range.</p>`);
+    ev.slice(0, limit).forEach(e => html.push(evRow(e)));
+    if(!ev.length) html.push(`<div class="empty">No new features yet. Add programs to your ★ Watchlist; features are detected from their JS bundles on each scan.</div>`);
+    $("#more").hidden = ev.length <= limit;
+  } else if(tab === "inscope"){
+    const since = cutoff();
+    const ev = F.filter(e => e.t==="scope+" && (e.f==="scope" || (!e.f && !e.x.startsWith("out-of-scope")))
+      && (!since || e.d >= since) && (!$("#plat").value || e.k.startsWith($("#plat").value+":"))
+      && (!$("#mine").checked || W.includes(e.k)) && match(e.k, e.n+" "+(e.a||[]).join(" ")));
+    if(!$("#q").value) html.push(`<p class="mut">Programs that added new <b>in-scope</b> targets, newest first. ${ev.length} additions in range. Emailed daily.</p>`);
+    ev.slice(0, limit).forEach(e => {
+      const b = P[e.k]?.bounty || e.b || 0;
+      html.push(`<div class="row"><div class="top"><span class="tag t-scope+">➕ in-scope</span><a href="${esc(e.u)}" target="_blank" rel="noopener">${esc(e.n)}</a>
+        <span class="tag">${PNAME[e.k.split(":")[0]]}</span><span class="tag">${esc(e.k)}</span>
+        ${b?`<span class="tag t-new">${b>1?"$"+b.toLocaleString():"bounty"}</span>`:`<span class="tag">VDP</span>`}
+        <span class="mut">${esc(e.d)}</span><button class="star" data-k="${esc(e.k)}">${W.includes(e.k)?"★":"☆"}</button></div>
+        ${chips("new in-scope", e.a || [e.x.replace(/^scope added: /,"")], "sub")}</div>`);
+    });
+    $("#more").hidden = ev.length <= limit;
   } else {
     const kind = tab==="new" ? "new" : $("#kind").value;
     const since = cutoff();
