@@ -243,20 +243,31 @@ def fingerprint(url):
     }
     fp["hash"] = hashlib.sha1(json.dumps(fp, sort_keys=True).encode()).hexdigest()[:12]
     fp["jsurls"] = sorted({_abs(url, s) for s in srcs})[:40]  # not hashed; used for endpoint extraction
-    fp["eps"] = extract_endpoints(html)  # endpoints referenced straight from the HTML
+    fp["eps"] = extract_endpoints(html, _host(url))  # endpoints referenced straight from the HTML
     return fp
 
 
 # Paths / GraphQL ops / feature-flag names pulled from JS and HTML; new ones flag new features.
-EP_RE = re.compile(r'["\'`](/(?:api|v\d|graphql|rest|internal|admin|user|account|auth|oauth|payment|billing|webhook|gql)[\w/\-.]{0,60})["\'`]', re.I)
+API_SEG = r"api|v\d|graphql|gql|rest|internal|admin|account|auth|oauth|payment|billing|webhook|checkout|user"
+EP_PATH_RE = re.compile(r'["\'`](/(?:' + API_SEG + r')[\w/\-.]{0,60})["\'`]', re.I)
+EP_ABS_RE = re.compile(r'\bhttps?://([a-z0-9.-]+\.[a-z]{2,})(/(?:' + API_SEG + r')[\w/\-.]{0,60})', re.I)
 GQL_RE = re.compile(r'\b(?:query|mutation)\s+([A-Za-z][A-Za-z0-9_]{3,40})\s*[({]')
 FLAG_RE = re.compile(r'["\']((?:feature|flag|ff|enable|beta)[_.-][A-Za-z0-9_.-]{2,40})["\']', re.I)
 
 
-def extract_endpoints(text):
+def _host(url):
+    m = re.match(r"https?://([^/]+)", url)
+    return m.group(1).lower() if m else ""
+
+
+def extract_endpoints(text, host=""):
+    """Return endpoints qualified with the serving host, e.g. 'app.pinterest.com/v3/pins'."""
     eps = set()
-    for m in EP_RE.findall(text):
-        eps.add(m.rstrip("/").lower())
+    for p in EP_PATH_RE.findall(text):
+        p = p.rstrip("/").lower()
+        eps.add(host + p if host else p)  # relative path -> attach the host it was found on
+    for h, p in EP_ABS_RE.findall(text):
+        eps.add((h + p.rstrip("/")).lower())  # absolute URL already carries its own host
     for m in GQL_RE.findall(text):
         eps.add("gql:" + m)
     for m in FLAG_RE.findall(text):
@@ -265,13 +276,13 @@ def extract_endpoints(text):
 
 
 def js_endpoints(urls):
-    """Download each JS bundle and extract endpoint-like strings."""
+    """Download each JS bundle and extract endpoint-like strings, qualified by the bundle's host."""
     found = set()
 
     def one(u):
         try:
             body, _ = get(u, limit=2_500_000)
-            return extract_endpoints(body.decode("utf-8", "ignore"))
+            return extract_endpoints(body.decode("utf-8", "ignore"), _host(u))
         except Exception:  # noqa: BLE001
             return []
 
@@ -281,21 +292,49 @@ def js_endpoints(urls):
     return sorted(found)
 
 
-CHANGELOG_PATHS = ("/changelog", "/releases", "/whats-new", "/release-notes", "/whatsnew",
-                   "/updates", "/news/product", "/blog/changelog", "/docs/changelog")
+CHANGELOG_PATHS = ("/changelog", "/releases", "/release-notes", "/whats-new", "/whatsnew",
+                   "/docs/changelog", "/product/changelog", "/blog/changelog")
+# A real changelog page shows release/version markers; a profile or marketing page does not.
+CHANGELOG_SIG = re.compile(r"change\s?log|release notes?|what[’']?s new|v\d+\.\d+\.\d+|version \d+\.\d+|released? (?:on |in |v)?\d", re.I)
+
+
+def _text(body):
+    return re.sub(r"<script.*?</script>|<style.*?</style>|<[^>]+>|\s+", " ",
+                  body.decode("utf-8", "ignore"), flags=re.S).strip()
+
+
+def _similar(a, b):
+    """Cheap near-duplicate check: catch-all pages share almost all their word set."""
+    wa, wb = set(a.lower().split()), set(b.lower().split())
+    if not wa or not wb:
+        return False
+    return len(wa & wb) / max(len(wa | wb), 1) > 0.85
 
 
 def changelog_scan(root):
-    """Return {path: sha} for any changelog-like page that exists, so we can diff its text."""
+    """Return {path: sha} for pages that are genuinely changelogs.
+
+    Guards against SPA / catch-all hosts (e.g. pinterest.com/<anything> is a profile,
+    not a 404) by requiring the page to differ from a known-garbage path AND to carry
+    real release/version markers before we ever treat it as a changelog.
+    """
+    try:
+        junk_body, jh = get(root + "/bw-no-such-path-9z7q", limit=200_000)
+        junk = _text(junk_body) if "text/html" in jh.get("Content-Type", "text/html") else ""
+    except Exception:  # noqa: BLE001
+        junk = ""  # a proper 404 is the good case
     out = {}
     for p in CHANGELOG_PATHS:
         try:
             body, h = get(root + p, limit=400_000)
             if "text/html" not in h.get("Content-Type", "text/html"):
                 continue
-            text = re.sub(r"<script.*?</script>|<style.*?</style>|<[^>]+>|\s+", " ",
-                          body.decode("utf-8", "ignore"), flags=re.S)
-            out[p] = hashlib.sha1(text.strip().encode()).hexdigest()[:12]
+            text = _text(body)
+            if junk and (text == junk or _similar(text, junk)):
+                continue  # catch-all host: this path is not really a changelog
+            if len(CHANGELOG_SIG.findall(text)) < 2:
+                continue  # no real release/version markers -> not a changelog
+            out[p] = hashlib.sha1(text.encode()).hexdigest()[:12]
         except Exception:  # noqa: BLE001
             continue
     return out
@@ -431,7 +470,7 @@ def watch_checks(key, prog, fps, events):
         eps.update(js_endpoints(new_bundles))
     seen = set(state["eps"])
     fresh = sorted(e for e in eps if e not in seen)
-    if fresh and not first:
+    if fresh and not first and seen:  # need a prior baseline; skips the flood after a format/endpoint reset
         api = [e for e in fresh if not e.startswith(("flag:", "gql:"))]
         gql = [e[4:] for e in fresh if e.startswith("gql:")]
         flags = [e[5:] for e in fresh if e.startswith("flag:")]
