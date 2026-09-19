@@ -282,7 +282,9 @@ def js_endpoints(urls):
     def one(u):
         try:
             body, _ = get(u, limit=2_500_000)
-            return extract_endpoints(body.decode("utf-8", "ignore"), _host(u))
+            # relative paths in a bundle: leave bare (the bundle host is often a CDN, not the API);
+            # absolute URLs inside the JS keep their real host via EP_ABS_RE.
+            return extract_endpoints(body.decode("utf-8", "ignore"), "")
         except Exception:  # noqa: BLE001
             return []
 
