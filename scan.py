@@ -437,6 +437,18 @@ def diff_fp(old, new):
     return "; ".join(notes) or None
 
 
+def wildcard_apexes(scope):
+    """Clean apex domains from wildcard scope entries, dropping label suffixes like '*.x.com Web Apps'."""
+    out = set()
+    for a in scope:
+        if not a.startswith("*."):
+            continue
+        d = a[2:].split("/")[0].split()[0].strip().lower()  # first token, no path, no trailing label
+        if re.fullmatch(r"[a-z0-9.-]+\.[a-z]{2,}", d):
+            out.add(d)
+    return out
+
+
 def watch_checks(key, prog, fps, events):
     first = key not in fps
     state = fps.setdefault(key, {"fp": {}, "subs": {}, "eps": [], "chlog": {}, "apps": {}})
@@ -494,7 +506,7 @@ def watch_checks(key, prog, fps, events):
             state["chlog"][root + path] = sha
 
     # 3. new subdomains (crt.sh) + liveness / takeover check on the fresh ones
-    for d in sorted({a[2:].split("/")[0] for a in prog["scope"] if a.startswith("*.")})[:10]:
+    for d in sorted(wildcard_apexes(prog["scope"]))[:10]:
         subs = crtsh(d)
         if subs is None:
             continue

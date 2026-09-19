@@ -34,7 +34,12 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add data docs/data
           git diff --cached --quiet || git commit -m "data: scan $(date -u +%F)"
-          git pull --rebase origin main && git push
+          # Data files are regenerated every run, so on a race prefer THIS run's fresh data.
+          for i in 1 2 3; do
+            git fetch -q origin main
+            git merge -X ours -m "merge concurrent scan" origin/main || git merge --abort || true
+            git push && break || sleep $((RANDOM % 10 + 3))
+          done
       - name: Open alert issue
         if: hashFiles('alert.md') != ''
         env:
