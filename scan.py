@@ -304,30 +304,49 @@ def js_endpoints(bundle_origins):
     return sorted(found)
 
 
+EXISTS_CODES = frozenset((200, 201, 204, 206, 400, 401, 403, 405, 406, 409, 415, 422, 429, 500, 501, 502, 503))
+
+
+def _hit(url, method="HEAD"):
+    for m in ([method] if method else ["HEAD", "GET"]):
+        try:
+            req = urllib.request.Request(url, headers=UA, method=m)
+            with urllib.request.urlopen(req, timeout=8, context=CTX) as r:
+                return r.status
+        except urllib.error.HTTPError as ex:
+            if m == "HEAD" and ex.code in (405, 501):
+                return _hit(url, "GET")  # server rejects HEAD; confirm with GET
+            return ex.code
+        except Exception:  # noqa: BLE001
+            return None
+    return None
+
+
 def probe_endpoints(candidates):
-    """HEAD each host-qualified endpoint once; return {endpoint: status} for those that respond.
-    Confirms the reachable location without downloading bodies or sending data."""
+    """Return {endpoint: status} for endpoints that genuinely exist at that host.
+
+    Catch-all SPA hosts answer 200 to any path, so a 200 there is meaningless. For each
+    host we probe a garbage path first; if it 2xxs, we treat that host as catch-all and
+    keep only its auth-gated responses (401/403/405/…), never its 200s."""
+    hosts = {}
+    for e in candidates:
+        hosts.setdefault(e.split("/")[0], []).append(e)
+    catchall = {}
+    with ThreadPoolExecutor(8) as ex:
+        for h, st in ex.map(lambda h: (h, _hit(f"https://{h}/bw-no-such-9z7q")), list(hosts)):
+            catchall[h] = st is not None and 200 <= st < 300
     live = {}
 
     def one(e):
-        url = "https://" + e
-        for method in ("HEAD", "GET"):
-            try:
-                req = urllib.request.Request(url, headers=UA, method=method)
-                with urllib.request.urlopen(req, timeout=8, context=CTX) as r:
-                    return e, r.status
-            except urllib.error.HTTPError as ex:  # 401/403/404/405 still tell us it exists
-                if method == "HEAD" and ex.code == 405:
-                    continue  # server rejects HEAD; retry with GET
-                return e, ex.code
-            except Exception:  # noqa: BLE001
-                return e, None
-        return e, None
+        return e, _hit("https://" + e)
 
-    with ThreadPoolExecutor(8) as ex:
-        for e, status in ex.map(one, candidates[:40]):
-            if status is not None:
-                live[e] = status
+    with ThreadPoolExecutor(10) as ex:
+        for e, st in ex.map(one, candidates[:200]):
+            if st not in EXISTS_CODES:
+                continue
+            if catchall.get(e.split("/")[0]) and 200 <= st < 300:
+                continue  # 200 from a catch-all host proves nothing
+            live[e] = st
     return live
 
 
@@ -488,6 +507,38 @@ def wildcard_apexes(scope):
     return out
 
 
+def candidate_hosts(scope):
+    """Hosts to test a relative API path against: the program's web hosts, plus api.<apex>/<apex>."""
+    hs = [re.sub(r"^https?://", "", u).split("/")[0] for u in web_targets(scope)]
+    apexes = {".".join(h.split(".")[-2:]) for h in hs if h.count(".") >= 1}
+    out = []
+    for h in hs + ["api." + a for a in apexes] + list(apexes) + ["www." + a for a in apexes]:
+        if h not in out:
+            out.append(h)
+    return out[:5]
+
+
+RANK = {c: i for i, c in enumerate([200, 201, 204, 206, 401, 403, 429, 405, 400, 422, 409, 415, 406, 500, 502, 503, 501])}
+
+
+def locate_endpoints(api, scope):
+    """Turn a list of endpoints (bare paths and absolute host/path) into reachable URLs.
+    Returns (api_upgraded, live) where live maps host/path -> HTTP status of the real location."""
+    bare = [a for a in api if a.startswith("/")]
+    qualified = [a for a in api if not a.startswith("/")]
+    cand = [h + p for h in candidate_hosts(scope) for p in bare[:40]] + qualified
+    hits = probe_endpoints(cand)
+    best = {}  # path -> (host/path, status), best status wins
+    for hp, st in hits.items():
+        p = "/" + hp.split("/", 1)[1]
+        if p not in best or RANK.get(st, 99) < RANK.get(best[p][1], 99):
+            best[p] = (hp, st)
+    upgraded = qualified + [hp for hp, _ in best.values()] + [a for a in bare if ("/" + a.split("/", 1)[-1]) not in best and a not in best]
+    live = {hp: st for hp, st in best.values()}
+    live.update({a: hits[a] for a in qualified if a in hits})
+    return sorted(set(upgraded))[:60], live
+
+
 def watch_checks(key, prog, fps, events):
     first = key not in fps
     state = fps.setdefault(key, {"fp": {}, "subs": {}, "eps": [], "chlog": {}, "apps": {}})
@@ -533,8 +584,8 @@ def watch_checks(key, prog, fps, events):
         api = [e for e in fresh if not e.startswith(("flag:", "gql:"))]
         gql = [e[4:] for e in fresh if e.startswith("gql:")]
         flags = [e[5:] for e in fresh if e.startswith("flag:")]
-        # verify which endpoint URLs actually resolve, so the tab links a reachable location
-        live = probe_endpoints([e for e in api if "/" in e and "." in e.split("/")[0]])
+        # resolve each new endpoint to a reachable URL (real host + live HTTP status)
+        api, live = locate_endpoints(api, prog["scope"])
         parts = []
         if api:
             parts.append(f"{len(api)} new endpoint(s): " + ", ".join(api[:12]))
