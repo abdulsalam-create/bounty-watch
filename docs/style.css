@@ -40,3 +40,5 @@ details ul{margin:4px 0;padding-left:18px;max-height:240px;overflow:auto;word-br
 .chip.flag{color:#d97706;border-color:#d97706}.chip.sub{color:#2563eb;border-color:#2563eb}
 .chip.js{color:#0891b2;border-color:#0891b2;text-decoration:none}
 .chip.js:hover{background:#0891b2;color:#fff}
+.stbadge{margin-left:5px;padding:0 4px;border-radius:3px;font-size:10px;font-weight:700;color:#fff}
+.stbadge.s2{background:#16a34a}.stbadge.s3{background:#0891b2}.stbadge.s4{background:#d97706}.stbadge.s5{background:#dc2626}

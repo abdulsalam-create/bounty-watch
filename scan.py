@@ -9,6 +9,7 @@ import os
 import re
 import ssl
 import time
+import urllib.error
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
@@ -275,23 +276,59 @@ def extract_endpoints(text, host=""):
     return sorted(eps)[:400]
 
 
-def js_endpoints(urls):
-    """Download each JS bundle and extract endpoint-like strings, qualified by the bundle's host."""
+def js_endpoints(bundle_origins):
+    """Extract endpoints from each JS bundle, qualifying relative paths with the page
+    origin(s) that load the bundle (NOT the CDN it is hosted on), so results are reachable URLs.
+    `bundle_origins` maps bundle URL -> set of page origins that referenced it."""
     found = set()
 
     def one(u):
         try:
             body, _ = get(u, limit=2_500_000)
-            # relative paths in a bundle: leave bare (the bundle host is often a CDN, not the API);
-            # absolute URLs inside the JS keep their real host via EP_ABS_RE.
-            return extract_endpoints(body.decode("utf-8", "ignore"), "")
+            text = body.decode("utf-8", "ignore")
+            out = set()
+            for e in extract_endpoints(text, ""):  # absolute URLs already carry a host; relative stay bare
+                if e.startswith(("gql:", "flag:")) or "." in e.split("/")[0]:
+                    out.add(e)  # already host-qualified or a gql/flag marker
+                else:
+                    for origin in bundle_origins.get(u, {""}):
+                        host = re.sub(r"^https?://", "", origin)
+                        out.add((host + e) if host else e)  # relative path -> page host + path
+            return out
         except Exception:  # noqa: BLE001
-            return []
+            return set()
 
     with ThreadPoolExecutor(6) as ex:
-        for r in ex.map(one, urls[:20]):
+        for r in ex.map(one, list(bundle_origins)[:20]):
             found.update(r)
     return sorted(found)
+
+
+def probe_endpoints(candidates):
+    """HEAD each host-qualified endpoint once; return {endpoint: status} for those that respond.
+    Confirms the reachable location without downloading bodies or sending data."""
+    live = {}
+
+    def one(e):
+        url = "https://" + e
+        for method in ("HEAD", "GET"):
+            try:
+                req = urllib.request.Request(url, headers=UA, method=method)
+                with urllib.request.urlopen(req, timeout=8, context=CTX) as r:
+                    return e, r.status
+            except urllib.error.HTTPError as ex:  # 401/403/404/405 still tell us it exists
+                if method == "HEAD" and ex.code == 405:
+                    continue  # server rejects HEAD; retry with GET
+                return e, ex.code
+            except Exception:  # noqa: BLE001
+                return e, None
+        return e, None
+
+    with ThreadPoolExecutor(8) as ex:
+        for e, status in ex.map(one, candidates[:40]):
+            if status is not None:
+                live[e] = status
+    return live
 
 
 CHANGELOG_PATHS = ("/changelog", "/releases", "/release-notes", "/whats-new", "/whatsnew",
@@ -461,11 +498,14 @@ def watch_checks(key, prog, fps, events):
     with ThreadPoolExecutor(8) as ex:
         results = dict(zip(urls, ex.map(fingerprint, urls)))
 
-    # 1. deploys (frontend build / stack changes) + collect new JS bundles for endpoint mining
+    # 1. deploys (frontend build / stack changes) + map each new bundle to the page origins that load it
+    bundle_origins = {}  # bundle URL -> set of page origins that referenced it
     new_bundles = []
     html_eps = set()
     for url, fp in results.items():
         old = state["fp"].get(url)
+        origin = re.match(r"https?://[^/]+", url)
+        origin = origin.group(0) if origin else ""
         if old and not first:
             note = diff_fp(old, fp)
             bundles = sorted(set(fp.get("jsurls", [])) - set(old.get("jsurls", [])))
@@ -473,21 +513,28 @@ def watch_checks(key, prog, fps, events):
                 events.append(ev("deploy", key, prog, f"{url}: {note}", js=bundles[:20]))
             new_bundles += bundles
         elif first:
-            new_bundles += fp.get("jsurls", [])
+            bundles = fp.get("jsurls", [])
+            new_bundles += bundles
+        else:
+            bundles = []
+        for b in bundles:
+            bundle_origins.setdefault(b, set()).add(origin)
         html_eps.update(fp.get("eps", []))
         if "err" not in fp or not old:
             state["fp"][url] = fp
 
     # 2. new features / endpoints / changelogs (the "what changed in the code" signal)
     eps = set(html_eps)
-    if new_bundles:
-        eps.update(js_endpoints(new_bundles))
+    if bundle_origins:
+        eps.update(js_endpoints(bundle_origins))
     seen = set(state["eps"])
     fresh = sorted(e for e in eps if e not in seen)
     if fresh and not first and seen:  # need a prior baseline; skips the flood after a format/endpoint reset
         api = [e for e in fresh if not e.startswith(("flag:", "gql:"))]
         gql = [e[4:] for e in fresh if e.startswith("gql:")]
         flags = [e[5:] for e in fresh if e.startswith("flag:")]
+        # verify which endpoint URLs actually resolve, so the tab links a reachable location
+        live = probe_endpoints([e for e in api if "/" in e and "." in e.split("/")[0]])
         parts = []
         if api:
             parts.append(f"{len(api)} new endpoint(s): " + ", ".join(api[:12]))
@@ -495,7 +542,9 @@ def watch_checks(key, prog, fps, events):
             parts.append(f"{len(gql)} new GraphQL op(s): " + ", ".join(gql[:10]))
         if flags:
             parts.append(f"{len(flags)} new feature flag(s): " + ", ".join(flags[:10]))
-        events.append(ev("feature", key, prog, "; ".join(parts), api=api[:60], gql=gql[:40], flags=flags[:40], js=sorted(set(new_bundles))[:20]))
+        events.append(ev("feature", key, prog, "; ".join(parts),
+                         api=api[:60], gql=gql[:40], flags=flags[:40],
+                         live=live, js=sorted(bundle_origins)[:20]))
     state["eps"] = sorted(seen | eps)[:1500]
 
     roots = sorted({re.match(r"^(https?://[^/]+)", u).group(1) for u in urls if re.match(r"^https?://[^/]+", u)})[:6]

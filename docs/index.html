@@ -94,6 +94,18 @@ function progRow(k, p, note){
 function chips(label, arr, cls){
   return (arr && arr.length) ? `<div class="chips"><span class="mut">${label}:</span>${arr.map(a=>`<code class="chip ${cls}">${esc(a)}</code>`).join("")}</div>` : "";
 }
+function endpointChips(arr, live){
+  if(!arr || !arr.length) return "";
+  live = live || {};
+  const items = arr.map(e=>{
+    const qualified = e.includes("/") && e.split("/")[0].includes(".");  // has a real host
+    if(!qualified) return `<code class="chip ep" title="path only; host unknown">${esc(e)}</code>`;
+    const url = "https://" + e, st = live[e];
+    const badge = st ? `<span class="stbadge s${String(st)[0]}">${st}</span>` : "";
+    return `<a class="chip ep" href="${esc(url)}" target="_blank" rel="noopener" title="${esc(url)}">${esc(e)}${badge}</a>`;
+  }).join("");
+  return `<div class="chips"><span class="mut">new endpoints:</span>${items}</div>`;
+}
 function jsLinks(arr){
   if(!arr || !arr.length) return "";
   return `<div class="chips"><span class="mut">new JS files:</span>${arr.map(u=>{
@@ -103,7 +115,7 @@ function jsLinks(arr){
 }
 function evRow(e){
   // new-feature events carry the actual new endpoints / GraphQL ops / feature flags, plus the new JS files
-  const feat = e.t === "feature" ? jsLinks(e.js) + chips("new endpoints", e.api, "ep") + chips("GraphQL", e.gql, "gql") + chips("feature flags", e.flags, "flag")
+  const feat = e.t === "feature" ? endpointChips(e.api, e.live) + chips("GraphQL", e.gql, "gql") + chips("feature flags", e.flags, "flag") + jsLinks(e.js)
     : e.t === "deploy" ? jsLinks(e.js)
     : (e.t === "subdomain" || e.t === "live-host") ? chips(e.t === "live-host" ? "live" : "new subdomains", e.hosts || e.subs, "sub") : "";
   const detail = e.t === "feature" ? `<div class="x"><b>New features detected</b> from a changed JS bundle</div>` : `<div class="x">${esc(e.x)}</div>`;
