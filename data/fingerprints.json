@@ -1775,15 +1775,15 @@
    "https://media.indrive.com": {
     "eps": [],
     "gen": "",
-    "hash": "c2f435662ab4",
+    "hash": "3c330c3f848b",
     "js": [
-     "frontify-bootstrap.c3dea4803537977b.js",
-     "frontify-runtime.89392a8718adca29.js",
+     "frontify-bootstrap.d686c875f12e9f4d.js",
+     "frontify-runtime.955f91f6b9424aeb.js",
      "frontify-vendors.2743b2493b2e8b7d.js"
     ],
     "jsurls": [
-     "https://cdn.frontify.com/js/frontify-bootstrap.c3dea4803537977b.js",
-     "https://cdn.frontify.com/js/frontify-runtime.89392a8718adca29.js",
+     "https://cdn.frontify.com/js/frontify-bootstrap.d686c875f12e9f4d.js",
+     "https://cdn.frontify.com/js/frontify-runtime.955f91f6b9424aeb.js",
      "https://cdn.frontify.com/js/frontify-vendors.2743b2493b2e8b7d.js"
     ],
     "powered": "",
