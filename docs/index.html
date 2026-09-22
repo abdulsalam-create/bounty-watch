@@ -46,8 +46,10 @@ const ls = {get(k){try{return localStorage.getItem(k)}catch{return null}}, set(k
 let P = {}, PZ = {}, F = [], W = [], wSha = null, tab = "new", limit = 100;
 
 async function init(){
-  const bust = "?v=" + Date.now();
-  const [p, f] = await Promise.all([fetch("data/programs.json"+bust).then(r=>r.json()), fetch("data/changes.json"+bust).then(r=>r.json()).catch(()=>[])]);
+  // no unique cache-buster: let the browser revalidate (ETag -> 304) so repeat loads are instant.
+  // GitHub Pages purges its CDN on each deploy, so data is still fresh after every scan.
+  const opt = { cache: "no-cache" };
+  const [p, f] = await Promise.all([fetch("data/programs.json", opt).then(r=>r.json()), fetch("data/changes.json", opt).then(r=>r.json()).catch(()=>[])]);
   P = p.programs; PZ = p.paused || {}; F = f;
   $("#meta").textContent = `${Object.keys(P).length} programs · updated ${p.updated.replace("T"," ")} UTC`;
   await loadWatch();
@@ -58,6 +60,12 @@ async function init(){
   render();
 }
 async function loadWatch(){
+  // Only hit the GitHub API when a token is set (it returns the sha needed to edit).
+  // Otherwise read the raw file directly: faster and not subject to the 60/hr unauth API limit.
+  if(!ls.get("bw_pat")){
+    W = await fetch("https://raw.githubusercontent.com/"+REPO+"/main/watchlist.json", {cache:"no-cache"}).then(r=>r.json()).catch(()=>[]);
+    return;
+  }
   try{
     const r = await fetch(`https://api.github.com/repos/${REPO}/contents/watchlist.json`, {headers: auth(), cache:"no-store"});
     const j = await r.json(); wSha = j.sha; W = JSON.parse(atob(j.content.replace(/\n/g,"")));

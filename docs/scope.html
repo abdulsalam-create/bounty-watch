@@ -50,8 +50,8 @@ const bounty = e => e.b ?? P[e.k]?.bounty ?? 0;
 const cutoff = n => new Date(Date.now() - n*864e5).toISOString().slice(0,10);
 
 async function init(){
-  const v = "?v=" + Date.now();
-  const [p, f] = await Promise.all([fetch("data/programs.json"+v).then(r=>r.json()), fetch("data/changes.json"+v).then(r=>r.json())]);
+  const opt = { cache: "no-cache" };  // revalidate instead of re-downloading every load
+  const [p, f] = await Promise.all([fetch("data/programs.json", opt).then(r=>r.json()), fetch("data/changes.json", opt).then(r=>r.json())]);
   P = p.programs;
   E = f.filter(e => e.t === "scope+" || e.t === "scope-");
   $("#meta").textContent = `updated ${p.updated.replace("T"," ")} UTC`;
