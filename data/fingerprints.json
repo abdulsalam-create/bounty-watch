@@ -939,6 +939,8 @@
   "chlog": {},
   "eps": [
    "alternativa.film/api/sitemap",
+   "diagnostics.prod.eu-central-1.amplitude.com/v1/capture",
+   "diagnostics.prod.us-west-2.amplitude.com/v1/capture",
    "file-storage-front.eu-east-1.indriverapp.com/api/v1/files",
    "file-storage-front.eu-east-1.indriverapp.com/api/v1/files/0199c827-8763-7cae-ab1f-392ba07b7467",
    "file-storage-front.eu-east-1.indriverapp.com/api/v1/files/0199c827-b549-7c4b-876c-2e4ea66fde6c",
@@ -995,6 +997,7 @@
    "file-storage-front.eu-east-1.indriverapp.com/api/v1/files/019f369f-8e73-7e5e-ac10-d08d702474f5",
    "file-storage-front.eu-east-1.indriverapp.com/api/v1/files/019f369f-8eaf-7ccb-a95b-a85b11066667",
    "flag:beta-message-color-schemes",
+   "flag:enable-background",
    "flag:enable-button",
    "flag:enable_confirm",
    "flag:enable_result",
@@ -1152,6 +1155,7 @@
    "media.indrive.com/api/account/domain/personal-project-access",
    "media.indrive.com/api/account/usage/storage",
    "media.indrive.com/api/ai-translation/flag/account",
+   "media.indrive.com/api/asset",
    "media.indrive.com/api/asset-attachment",
    "media.indrive.com/api/asset/asset-downloaded-event",
    "media.indrive.com/api/asset/required-licenses",
@@ -1771,16 +1775,16 @@
    "https://media.indrive.com": {
     "eps": [],
     "gen": "",
-    "hash": "da7abc199a39",
+    "hash": "c2f435662ab4",
     "js": [
-     "frontify-bootstrap.29ce1019ae160c5f.js",
-     "frontify-runtime.5f54810e7f2d8021.js",
-     "frontify-vendors.d8003b7a13088720.js"
+     "frontify-bootstrap.c3dea4803537977b.js",
+     "frontify-runtime.89392a8718adca29.js",
+     "frontify-vendors.2743b2493b2e8b7d.js"
     ],
     "jsurls": [
-     "https://cdn.frontify.com/js/frontify-bootstrap.29ce1019ae160c5f.js",
-     "https://cdn.frontify.com/js/frontify-runtime.5f54810e7f2d8021.js",
-     "https://cdn.frontify.com/js/frontify-vendors.d8003b7a13088720.js"
+     "https://cdn.frontify.com/js/frontify-bootstrap.c3dea4803537977b.js",
+     "https://cdn.frontify.com/js/frontify-runtime.89392a8718adca29.js",
+     "https://cdn.frontify.com/js/frontify-vendors.2743b2493b2e8b7d.js"
     ],
     "powered": "",
     "server": "frontify",
