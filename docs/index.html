@@ -21,6 +21,7 @@
   <button data-t="all">All programs</button>
   <button data-t="recent">Recently updated</button>
   <button data-t="hunt">🎯 Hunt score</button>
+  <button data-t="selfhosted">🏴 Self-hosted</button>
   <button data-t="paused">Paused / resumed</button>
   <button data-t="watch">Watchlist</button>
   <button data-t="settings">Settings</button>
@@ -43,16 +44,16 @@ const PNAME = {h1:"HackerOne",bc:"Bugcrowd",ywh:"YesWeHack",it:"Intigriti"};
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const ls = {get(k){try{return localStorage.getItem(k)}catch{return null}}, set(k,v){try{v?localStorage.setItem(k,v):localStorage.removeItem(k)}catch{}}};
-let P = {}, PZ = {}, F = [], W = [], wSha = null, tab = "new", limit = 100;
+let P = {}, PZ = {}, F = [], W = [], SH = {programs:[]}, wSha = null, tab = "new", limit = 100;
 
 async function init(){
   const bust = "?v=" + Date.now();
-  const [p, f] = await Promise.all([fetch("data/programs.json"+bust).then(r=>r.json()), fetch("data/changes.json"+bust).then(r=>r.json()).catch(()=>[])]);
-  P = p.programs; PZ = p.paused || {}; F = f;
+  const [p, f, sh] = await Promise.all([fetch("data/programs.json"+bust).then(r=>r.json()), fetch("data/changes.json"+bust).then(r=>r.json()).catch(()=>[]), fetch("data/selfhosted.json"+bust).then(r=>r.json()).catch(()=>({programs:[]}))]);
+  P = p.programs; PZ = p.paused || {}; F = f; SH = sh;
   $("#meta").textContent = `${Object.keys(P).length} programs · updated ${p.updated.replace("T"," ")} UTC`;
   await loadWatch();
   const h = (location.hash || "").slice(1);
-  if(["features","inscope","feed","all","recent","hunt","paused","watch"].includes(h)){
+  if(["features","inscope","feed","all","recent","hunt","paused","watch","selfhosted"].includes(h)){
     tab = h; document.querySelectorAll("#tabs button").forEach(b=>b.classList.toggle("on", b.dataset.t===h));
   }
   render();
@@ -128,13 +129,30 @@ function render(){
   $("#bar").hidden = tab === "settings";
   $("#kind").hidden = tab !== "feed";
   $("#sort").hidden = !["all","watch","recent"].includes(tab);
-  $("#stype").hidden = tab === "feed" || tab === "settings" || tab === "paused";
+  $("#stype").hidden = ["feed","settings","paused","selfhosted"].includes(tab);
   let html = [];
   if(tab === "settings"){
     html = [`<div class="row"><b>Watchlist editing</b><p class="mut">Create a <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">fine-grained token</a> with access to <code>${REPO}</code> only and <i>Contents: Read and write</i>. It is stored only in this browser.</p>
       <input type="password" id="pat" placeholder="github_pat_…" value="${esc(ls.get("bw_pat")||"")}" style="width:100%"><p><button id="savepat" class="star" style="margin:0">Save token</button></p>
       <p class="mut">No token? Edit <a href="https://github.com/${REPO}/edit/main/watchlist.json" target="_blank" rel="noopener">watchlist.json</a> directly. Keys look like <code>h1:handle</code>, <code>bc:slug</code>, <code>ywh:slug</code>, <code>it:company/handle</code>.</p>
       <p class="mut">Run a scan now: <a href="https://github.com/${REPO}/actions/workflows/scan.yml" target="_blank" rel="noopener">Actions → daily-scan → Run workflow</a>.</p></div>`];
+  } else if(tab === "selfhosted"){
+    const since = cutoff(), q = $("#q").value.trim().toLowerCase(), pl = $("#plat").value;
+    let list = (SH.programs || []).filter(r => (!since || (r.first||"") >= since)
+      && !pl && (!q || (r.name+" "+r.domain+" "+(r.rewards||[]).join(" ")+" "+r.submit).toLowerCase().includes(q)));
+    html.push(`<p class="mut">Independent programs off HackerOne/Bugcrowd/YesWeHack/Intigriti, each verified to publish a concrete reward table and a way to submit. ${(SH.programs||[]).length} found${SH.queued?`, ${SH.queued} more queued for checking`:""}. Emailed as new ones appear.</p>`);
+    list.slice(0, limit).forEach(r => {
+      const rewards = (r.rewards||[]).map(x=>`<code class="chip ep">${esc(x)}</code>`).join("");
+      const submit = /@/.test(r.submit) && !/\s/.test(r.submit) ? `<a class="navlink" href="mailto:${esc(r.submit)}">${esc(r.submit)}</a>` : esc(r.submit);
+      html.push(`<div class="row"><div class="top"><a href="${esc(r.policy)}" target="_blank" rel="noopener">${esc(r.name)}</a>
+        <span class="tag">${esc(r.domain)}</span><span class="tag t-new">self-hosted</span>
+        ${r.sla?`<span class="tag t-feature">SLA</span>`:""}<span class="mut">found ${esc(r.first)}</span></div>
+        <div class="chips"><span class="mut">rewards:</span>${rewards}</div>
+        <div class="x">submit: ${submit}${r.sla?` · SLA: ${esc(r.sla)}`:""} · <span class="mut">via ${esc(r.source)}</span></div>
+        <div class="x"><a class="navlink" href="${esc(r.policy)}" target="_blank" rel="noopener">policy →</a></div></div>`);
+    });
+    if(!list.length) html.push(`<div class="empty">No self-hosted programs match yet. The list builds up over successive scans as candidates are verified.</div>`);
+    $("#more").hidden = list.length <= limit;
   } else if(tab === "paused"){
     const since = cutoff(), flap = m => (m.flips||0) >= 3 ? `<span class="tag t-suspended">flapping · paused ${m.flips}×</span>` : "";
     const gone = Object.entries(PZ).filter(([k,m]) => (!since || m.gone >= since) && match(k, m.n||"")).sort((a,b)=>b[1].gone.localeCompare(a[1].gone));

@@ -59,6 +59,11 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: gh issue create --title "$(cat inscope_title.txt)" --body-file inscope.md --label bounty-watch
+      - name: Open self-hosted programs issue
+        if: hashFiles('selfhosted.md') != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh issue create --title "$(cat selfhosted_title.txt)" --body-file selfhosted.md --label bounty-watch
       - name: Tidy old alert issues
         if: always()
         env:
