@@ -764,10 +764,29 @@
    "https://trello.com/docs/changelog": "f18757e1aae0"
   },
   "eps": [
+   "api.statsigcdn.com/v1",
+   "api.trello.com/api/v2/frontend/clientsdkkey",
+   "api.trello.com/api/v2/frontend/experimentvalues",
+   "api.trello.com/authenticate_openid",
+   "featureassets.org/v1",
+   "flag:enable-csm-aj-logo",
+   "flag:enable-window-subanchor",
+   "flag:enable_log_event_compression",
    "flag:feature-announcement-modal",
    "flag:feature-announcement-popover",
+   "flag:feature-gate-js-client",
+   "flag:feature_flag_access",
    "flag:feature_gates",
-   "preferences.atlassian.com/rest/forms/config"
+   "gql:SetMarketingContext",
+   "gql:getUnifiedProfile",
+   "preferences.atlassian.com/rest/forms/config",
+   "preferences.stg.atlassian.com/rest/forms/config",
+   "prodregistryv2.org/v1",
+   "statsigapi.net/v1/sdk_exception",
+   "trello.com/api/v2/frontend/clientsdkkey",
+   "trello.com/api/v2/frontend/experimentvalues",
+   "trello.com/authenticate_openid",
+   "xp.atlassian.com/v1/rgstr"
   ],
   "fp": {
    "https://api.trello.com": {
@@ -775,16 +794,16 @@
      "flag:feature_gates"
     ],
     "gen": "",
-    "hash": "1d27fb25b60d",
+    "hash": "55918cb8ecca",
     "js": [
      "atl-onetrust-wrapper.min.js",
-     "trello-test-page.44cd92aa.js",
-     "trello-test-page.runtime.0d9a5378.js"
+     "trello-test-page.31ae1ac3.js",
+     "trello-test-page.runtime.f0936722.js"
     ],
     "jsurls": [
      "https://atl-onetrust-wrapper.atlassian.com/assets/atl-onetrust-wrapper.min.js",
-     "https://trello-bifrost.prod-east.frontend.public.atl-paas.net/assets/trello-test-page.44cd92aa.js",
-     "https://trello-bifrost.prod-east.frontend.public.atl-paas.net/assets/trello-test-page.runtime.0d9a5378.js"
+     "https://trello-bifrost.prod-east.frontend.public.atl-paas.net/assets/trello-test-page.31ae1ac3.js",
+     "https://trello-bifrost.prod-east.frontend.public.atl-paas.net/assets/trello-test-page.runtime.f0936722.js"
     ],
     "powered": "",
     "server": "AtlassianEdge",
@@ -844,16 +863,16 @@
      "flag:feature_gates"
     ],
     "gen": "",
-    "hash": "1d27fb25b60d",
+    "hash": "55918cb8ecca",
     "js": [
      "atl-onetrust-wrapper.min.js",
-     "trello-test-page.44cd92aa.js",
-     "trello-test-page.runtime.0d9a5378.js"
+     "trello-test-page.31ae1ac3.js",
+     "trello-test-page.runtime.f0936722.js"
     ],
     "jsurls": [
      "https://atl-onetrust-wrapper.atlassian.com/assets/atl-onetrust-wrapper.min.js",
-     "https://trello-bifrost.prod-east.frontend.public.atl-paas.net/assets/trello-test-page.44cd92aa.js",
-     "https://trello-bifrost.prod-east.frontend.public.atl-paas.net/assets/trello-test-page.runtime.0d9a5378.js"
+     "https://trello-bifrost.prod-east.frontend.public.atl-paas.net/assets/trello-test-page.31ae1ac3.js",
+     "https://trello-bifrost.prod-east.frontend.public.atl-paas.net/assets/trello-test-page.runtime.f0936722.js"
     ],
     "powered": "",
     "server": "AtlassianEdge",
@@ -1778,15 +1797,15 @@
    "https://media.indrive.com": {
     "eps": [],
     "gen": "",
-    "hash": "c10a132dca50",
+    "hash": "6df5d4de2858",
     "js": [
-     "frontify-bootstrap.002b60bf8c48ff85.js",
-     "frontify-runtime.d0c57fe338c59d5c.js",
+     "frontify-bootstrap.991861b8ca740e83.js",
+     "frontify-runtime.9ec89dd937ec1d0c.js",
      "frontify-vendors.d5fa01e3c1463e1d.js"
     ],
     "jsurls": [
-     "https://cdn.frontify.com/js/frontify-bootstrap.002b60bf8c48ff85.js",
-     "https://cdn.frontify.com/js/frontify-runtime.d0c57fe338c59d5c.js",
+     "https://cdn.frontify.com/js/frontify-bootstrap.991861b8ca740e83.js",
+     "https://cdn.frontify.com/js/frontify-runtime.9ec89dd937ec1d0c.js",
      "https://cdn.frontify.com/js/frontify-vendors.d5fa01e3c1463e1d.js"
     ],
     "powered": "",
