@@ -40,18 +40,43 @@ jobs:
             git merge -X ours -m "merge concurrent scan" origin/main || git merge --abort || true
             git push && break || sleep $((RANDOM % 10 + 3))
           done
+      - name: Ensure alert label
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh label create bounty-watch --color 5b4ee6 --description "bounty-watch automated alert" --force || true
       - name: Open alert issue
         if: hashFiles('alert.md') != ''
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh issue create --title "$(cat alert_title.txt)" --body-file alert.md
+        run: gh issue create --title "$(cat alert_title.txt)" --body-file alert.md --label bounty-watch
       - name: Open daily scope digest issue
         if: hashFiles('digest.md') != ''
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh issue create --title "$(cat digest_title.txt)" --body-file digest.md
+        run: gh issue create --title "$(cat digest_title.txt)" --body-file digest.md --label bounty-watch
       - name: Open new in-scope digest issue
         if: hashFiles('inscope.md') != ''
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh issue create --title "$(cat inscope_title.txt)" --body-file inscope.md
+        run: gh issue create --title "$(cat inscope_title.txt)" --body-file inscope.md --label bounty-watch
+      - name: Tidy old alert issues
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        # Close bounty-watch alerts older than 14 days, or older than 2 days once you have
+        # reacted to them with any emoji (an ack the bot can see; personal read-state is private).
+        run: |
+          now=$(date -u +%s)
+          gh issue list --label bounty-watch --state open --limit 300 \
+            --json number,createdAt --jq '.[] | "\(.number) \(.createdAt)"' |
+          while read -r num created; do
+            [ -n "$num" ] || continue
+            age=$(( (now - $(date -u -d "$created" +%s)) / 86400 ))
+            reactions=$(gh api "repos/$REPO/issues/$num/reactions" --jq 'length' 2>/dev/null || echo 0)
+            if [ "$age" -ge 14 ] || { [ "${reactions:-0}" -gt 0 ] && [ "$age" -ge 2 ]; }; then
+              gh issue close "$num" -r completed \
+                -c "Auto-closed by bounty-watch cleanup (age ${age}d, reactions ${reactions}). Reopen if still needed." \
+                && echo "closed #$num (age ${age}d, reactions ${reactions})"
+            fi
+          done
