@@ -577,7 +577,7 @@
    "https://pinterest.com": {
     "eps": [],
     "gen": "",
-    "hash": "8629fd8a5b45",
+    "hash": "c4d1b4cb067e",
     "js": [
      "11205-19e0aba1d00d0bc1.js",
      "11274-4c00893ca5caa9ad.js",
@@ -590,7 +590,6 @@
      "17675-276b68cbe75ed8f5.js",
      "20559-661cdfe297c3fb00.js",
      "21444-407cbf3847688e5b.js",
-     "22309-db5eee259145fd82.js",
      "22835-9c6604cfcb5f0dda.js",
      "3015-e24d48b43ec38f35.js",
      "31901-46efc48ec6ec0fab.js",
@@ -602,13 +601,10 @@
      "44116-bd2ac39255a52cb0.js",
      "44175-40f2db365ac0bdaa.js",
      "4459-72bac1ca7f747f2e.js",
-     "4619-d7f8bfd3841e40ab.js",
      "48610-b00efbdf0457f9ba.js",
      "48693-32c83c70ccf6e9f8.js",
      "4936-dc26fe192e9e3792.js",
-     "50820-50539b1471204846.js",
      "53145-90085c95528665bf.js",
-     "55016-a6bf0d8883a85f0d.js",
      "57124-48e196ddb3f441ec.js",
      "57874-0757715c7114d02e.js",
      "6058-6de87e7a99d4aa86.js",
@@ -635,10 +631,14 @@
      "86893-daabb45285e0a762.js",
      "90553-023370a95fc4f8c4.js",
      "91411-606b44baa5fa3f59.js",
-     "95690-fe21fd0c67dccb4c.js",
      "96589-bedf0c304c61a05a.js",
      "96764-3b37ba2fbe7425b6.js",
-     "99272-143cd220507499fe.js"
+     "99272-143cd220507499fe.js",
+     "99424-cdba8e7c4a16c2e7.js",
+     "99898-98bd1539d7e92dda.js",
+     "GoogleOneTap-3f2fb4ada94072bf.js",
+     "UnauthPageWrapperFooter-13c5b88835b4f078.js",
+     "UnauthPageWrapperHeader-92bd599fe43149e6.js"
     ],
     "jsurls": [
      "https://s.pinimg.com/webapp/11205-19e0aba1d00d0bc1.js",
@@ -652,7 +652,6 @@
      "https://s.pinimg.com/webapp/17675-276b68cbe75ed8f5.js",
      "https://s.pinimg.com/webapp/20559-661cdfe297c3fb00.js",
      "https://s.pinimg.com/webapp/21444-407cbf3847688e5b.js",
-     "https://s.pinimg.com/webapp/22309-db5eee259145fd82.js",
      "https://s.pinimg.com/webapp/22835-9c6604cfcb5f0dda.js",
      "https://s.pinimg.com/webapp/3015-e24d48b43ec38f35.js",
      "https://s.pinimg.com/webapp/31901-46efc48ec6ec0fab.js",
@@ -664,13 +663,10 @@
      "https://s.pinimg.com/webapp/44116-bd2ac39255a52cb0.js",
      "https://s.pinimg.com/webapp/44175-40f2db365ac0bdaa.js",
      "https://s.pinimg.com/webapp/4459-72bac1ca7f747f2e.js",
-     "https://s.pinimg.com/webapp/4619-d7f8bfd3841e40ab.js",
      "https://s.pinimg.com/webapp/48610-b00efbdf0457f9ba.js",
      "https://s.pinimg.com/webapp/48693-32c83c70ccf6e9f8.js",
      "https://s.pinimg.com/webapp/4936-dc26fe192e9e3792.js",
-     "https://s.pinimg.com/webapp/50820-50539b1471204846.js",
      "https://s.pinimg.com/webapp/53145-90085c95528665bf.js",
-     "https://s.pinimg.com/webapp/55016-a6bf0d8883a85f0d.js",
      "https://s.pinimg.com/webapp/57124-48e196ddb3f441ec.js",
      "https://s.pinimg.com/webapp/57874-0757715c7114d02e.js",
      "https://s.pinimg.com/webapp/6058-6de87e7a99d4aa86.js",
@@ -680,7 +676,11 @@
      "https://s.pinimg.com/webapp/62639-a4455727cdde35d5.js",
      "https://s.pinimg.com/webapp/64142-93d2239762e2a343.js",
      "https://s.pinimg.com/webapp/65231-12dbf4ce9569ed01.js",
-     "https://s.pinimg.com/webapp/66989-7abf01fc53685c6c.js"
+     "https://s.pinimg.com/webapp/66989-7abf01fc53685c6c.js",
+     "https://s.pinimg.com/webapp/67358-9f4be8f5e08e582e.js",
+     "https://s.pinimg.com/webapp/69164-602f9b06d5c46a14.js",
+     "https://s.pinimg.com/webapp/69322-fdcd7f3473ffc254.js",
+     "https://s.pinimg.com/webapp/71504-1acffe4848e85fd2.js"
     ],
     "powered": "",
     "server": "",
@@ -1161,6 +1161,7 @@
    "gql:searchOnGuidelineAssets",
    "gql:updateCustomMetadataProperty",
    "gql:updateShareLink",
+   "indrive.com/user-research",
    "media.indrive.com/account-management",
    "media.indrive.com/account-management/guidelines",
    "media.indrive.com/account-management/libraries",
@@ -1400,6 +1401,8 @@
      "webpack-7adc38101b91392f.js"
     ],
     "jsurls": [
+     "https://cargo.indrive.com/_next/static/Ht4JYPcOOzHgBH5ECdP2e/_buildManifest.js",
+     "https://cargo.indrive.com/_next/static/Ht4JYPcOOzHgBH5ECdP2e/_ssgManifest.js",
      "https://cargo.indrive.com/_next/static/chunks/1950-9618c963e229110d.js",
      "https://cargo.indrive.com/_next/static/chunks/4640.5f021c67951bced5.js",
      "https://cargo.indrive.com/_next/static/chunks/4774.919fa601081d6b27.js",
@@ -1413,8 +1416,6 @@
      "https://cargo.indrive.com/_next/static/chunks/pages/delivery-09bf5e331eb48cf7.js",
      "https://cargo.indrive.com/_next/static/chunks/polyfills-42372ed130431b0a.js",
      "https://cargo.indrive.com/_next/static/chunks/webpack-7adc38101b91392f.js",
-     "https://cargo.indrive.com/_next/static/pdSwM27jln_GgSIlvQCs6/_buildManifest.js",
-     "https://cargo.indrive.com/_next/static/pdSwM27jln_GgSIlvQCs6/_ssgManifest.js",
      "https://cargo.indrive.com/proxy-smart-script"
     ],
     "powered": "Next.js",
@@ -1552,6 +1553,8 @@
      "webpack-7adc38101b91392f.js"
     ],
     "jsurls": [
+     "https://indrive.com/_next/static/Ht4JYPcOOzHgBH5ECdP2e/_buildManifest.js",
+     "https://indrive.com/_next/static/Ht4JYPcOOzHgBH5ECdP2e/_ssgManifest.js",
      "https://indrive.com/_next/static/chunks/1283.47e0001c18aaa374.js",
      "https://indrive.com/_next/static/chunks/1359.4756d75951894201.js",
      "https://indrive.com/_next/static/chunks/2304.dded142849186f6b.js",
@@ -1568,8 +1571,6 @@
      "https://indrive.com/_next/static/chunks/pages/index-06674f2e454c01ff.js",
      "https://indrive.com/_next/static/chunks/polyfills-42372ed130431b0a.js",
      "https://indrive.com/_next/static/chunks/webpack-7adc38101b91392f.js",
-     "https://indrive.com/_next/static/pdSwM27jln_GgSIlvQCs6/_buildManifest.js",
-     "https://indrive.com/_next/static/pdSwM27jln_GgSIlvQCs6/_ssgManifest.js",
      "https://indrive.com/proxy-smart-script"
     ],
     "powered": "Next.js",
@@ -1636,6 +1637,8 @@
      "webpack-7adc38101b91392f.js"
     ],
     "jsurls": [
+     "https://indriver.com/_next/static/Ht4JYPcOOzHgBH5ECdP2e/_buildManifest.js",
+     "https://indriver.com/_next/static/Ht4JYPcOOzHgBH5ECdP2e/_ssgManifest.js",
      "https://indriver.com/_next/static/chunks/1283.47e0001c18aaa374.js",
      "https://indriver.com/_next/static/chunks/1359.4756d75951894201.js",
      "https://indriver.com/_next/static/chunks/2304.dded142849186f6b.js",
@@ -1652,8 +1655,6 @@
      "https://indriver.com/_next/static/chunks/pages/index-06674f2e454c01ff.js",
      "https://indriver.com/_next/static/chunks/polyfills-42372ed130431b0a.js",
      "https://indriver.com/_next/static/chunks/webpack-7adc38101b91392f.js",
-     "https://indriver.com/_next/static/pdSwM27jln_GgSIlvQCs6/_buildManifest.js",
-     "https://indriver.com/_next/static/pdSwM27jln_GgSIlvQCs6/_ssgManifest.js",
      "https://indriver.com/proxy-smart-script"
     ],
     "powered": "Next.js",
@@ -1797,15 +1798,15 @@
    "https://media.indrive.com": {
     "eps": [],
     "gen": "",
-    "hash": "6df5d4de2858",
+    "hash": "f44fc93c2732",
     "js": [
-     "frontify-bootstrap.991861b8ca740e83.js",
-     "frontify-runtime.9ec89dd937ec1d0c.js",
+     "frontify-bootstrap.ccd583f521468238.js",
+     "frontify-runtime.6759608ed4a50e04.js",
      "frontify-vendors.d5fa01e3c1463e1d.js"
     ],
     "jsurls": [
-     "https://cdn.frontify.com/js/frontify-bootstrap.991861b8ca740e83.js",
-     "https://cdn.frontify.com/js/frontify-runtime.9ec89dd937ec1d0c.js",
+     "https://cdn.frontify.com/js/frontify-bootstrap.ccd583f521468238.js",
+     "https://cdn.frontify.com/js/frontify-runtime.6759608ed4a50e04.js",
      "https://cdn.frontify.com/js/frontify-vendors.d5fa01e3c1463e1d.js"
     ],
     "powered": "",
