@@ -1,1 +1,1 @@
-{"last":"2026-09-24","pending":[]}
+{"last":"2026-09-24","pending":[{"d":"2026-09-24","t":"scope+","k":"h1:marriott","n":"Marriott Bug Bounty Program","u":"https://hackerone.com/marriott","x":"scope added: https://gatewaydsapprd.marriott.com/v1/, https://gatewaydsapprd.marriott.com/v2/","a":["https://gatewaydsapprd.marriott.com/v1/","https://gatewaydsapprd.marriott.com/v2/"],"f":"scope","b":1}]}

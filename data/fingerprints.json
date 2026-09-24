@@ -1777,13 +1777,13 @@
    "https://landing.ryadom.kz": {
     "eps": [],
     "gen": "",
-    "hash": "cf95d796ac5a",
+    "hash": "e9f1ffae44d1",
     "js": [
-     "3352556.js",
-     "400ac52.js",
-     "4e0ac5e.js",
-     "4f905f7.js",
-     "d4973e1.js",
+     "507ea63.js",
+     "9f2e54c.js",
+     "a32bf27.js",
+     "c33adc0.js",
+     "f01518a.js",
      "gtags.js",
      "gtm.js",
      "js",
@@ -1791,11 +1791,11 @@
     ],
     "jsurls": [
      "https://landing.ryadom.kz//www.googletagmanager.com/gtm.js",
-     "https://landing.ryadom.kz/_nuxt/3352556.js",
-     "https://landing.ryadom.kz/_nuxt/400ac52.js",
-     "https://landing.ryadom.kz/_nuxt/4e0ac5e.js",
-     "https://landing.ryadom.kz/_nuxt/4f905f7.js",
-     "https://landing.ryadom.kz/_nuxt/d4973e1.js",
+     "https://landing.ryadom.kz/_nuxt/507ea63.js",
+     "https://landing.ryadom.kz/_nuxt/9f2e54c.js",
+     "https://landing.ryadom.kz/_nuxt/a32bf27.js",
+     "https://landing.ryadom.kz/_nuxt/c33adc0.js",
+     "https://landing.ryadom.kz/_nuxt/f01518a.js",
      "https://landing.ryadom.kz/scripts/gtags.js",
      "https://landing.ryadom.kz/scripts/ymetrics.js",
      "https://www.googletagmanager.com/gtag/js"
@@ -1807,15 +1807,15 @@
    "https://media.indrive.com": {
     "eps": [],
     "gen": "",
-    "hash": "c72f73f864bf",
+    "hash": "fec0b0191303",
     "js": [
-     "frontify-bootstrap.9bf3f1173990a484.js",
-     "frontify-runtime.d2fe04997090adfa.js",
+     "frontify-bootstrap.603fcc31ca2e6c46.js",
+     "frontify-runtime.b9209c2a8a22ada4.js",
      "frontify-vendors.36a64fb34edb37c0.js"
     ],
     "jsurls": [
-     "https://cdn.frontify.com/js/frontify-bootstrap.9bf3f1173990a484.js",
-     "https://cdn.frontify.com/js/frontify-runtime.d2fe04997090adfa.js",
+     "https://cdn.frontify.com/js/frontify-bootstrap.603fcc31ca2e6c46.js",
+     "https://cdn.frontify.com/js/frontify-runtime.b9209c2a8a22ada4.js",
      "https://cdn.frontify.com/js/frontify-vendors.36a64fb34edb37c0.js"
     ],
     "powered": "",
