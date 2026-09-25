@@ -1199,6 +1199,7 @@
    "media.indrive.com/api/asset-attachment",
    "media.indrive.com/api/asset/asset-downloaded-event",
    "media.indrive.com/api/asset/required-licenses",
+   "media.indrive.com/api/auth/saml/logout",
    "media.indrive.com/api/brand-assistant/account-configuration",
    "media.indrive.com/api/brand-assistant/libraries/opt-in",
    "media.indrive.com/api/brandportal",
@@ -1215,6 +1216,7 @@
    "media.indrive.com/api/file/progress",
    "media.indrive.com/api/groups/list",
    "media.indrive.com/api/guideline-settings-import",
+   "media.indrive.com/api/instance/authentication",
    "media.indrive.com/api/instance/global-message",
    "media.indrive.com/api/marketplace-app/dev-graphql-token",
    "media.indrive.com/api/marketplace/app",
@@ -1238,6 +1240,7 @@
    "media.indrive.com/api/user/address",
    "media.indrive.com/api/user/email-verification",
    "media.indrive.com/api/user/info",
+   "media.indrive.com/api/user/logout",
    "media.indrive.com/api/user/update",
    "media.indrive.com/api/visual-search/account/opt-in",
    "media.indrive.com/api/visual-search/account/opt-out",
@@ -1815,15 +1818,15 @@
    "https://media.indrive.com": {
     "eps": [],
     "gen": "",
-    "hash": "698e684881f8",
+    "hash": "9a341e9907a8",
     "js": [
-     "frontify-bootstrap.b1981fd778f23d74.js",
-     "frontify-runtime.42b3ae1eb68931e0.js",
+     "frontify-bootstrap.b6808ced56fd5de7.js",
+     "frontify-runtime.f94e511ec429d2d8.js",
      "frontify-vendors.36a64fb34edb37c0.js"
     ],
     "jsurls": [
-     "https://cdn.frontify.com/js/frontify-bootstrap.b1981fd778f23d74.js",
-     "https://cdn.frontify.com/js/frontify-runtime.42b3ae1eb68931e0.js",
+     "https://cdn.frontify.com/js/frontify-bootstrap.b6808ced56fd5de7.js",
+     "https://cdn.frontify.com/js/frontify-runtime.f94e511ec429d2d8.js",
      "https://cdn.frontify.com/js/frontify-vendors.36a64fb34edb37c0.js"
     ],
     "powered": "",
