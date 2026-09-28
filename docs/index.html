@@ -43,14 +43,14 @@ const PNAME = {h1:"HackerOne",bc:"Bugcrowd",ywh:"YesWeHack",it:"Intigriti"};
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const ls = {get(k){try{return localStorage.getItem(k)}catch{return null}}, set(k,v){try{v?localStorage.setItem(k,v):localStorage.removeItem(k)}catch{}}};
-let P = {}, PZ = {}, F = [], W = [], wSha = null, tab = "new", limit = 100;
+let P = {}, PZ = {}, F = [], W = [], EV = {}, wSha = null, tab = "new", limit = 100;
 
 async function init(){
   // no unique cache-buster: let the browser revalidate (ETag -> 304) so repeat loads are instant.
   // GitHub Pages purges its CDN on each deploy, so data is still fresh after every scan.
   const opt = { cache: "no-cache" };
-  const [p, f] = await Promise.all([fetch("data/programs.json", opt).then(r=>r.json()), fetch("data/changes.json", opt).then(r=>r.json()).catch(()=>[])]);
-  P = p.programs; PZ = p.paused || {}; F = f;
+  const [p, f, ev] = await Promise.all([fetch("data/programs.json", opt).then(r=>r.json()), fetch("data/changes.json", opt).then(r=>r.json()).catch(()=>[]), fetch("data/evidence.json", opt).then(r=>r.json()).catch(()=>({}))]);
+  P = p.programs; PZ = p.paused || {}; F = f; EV = ev || {};
   $("#meta").textContent = `${Object.keys(P).length} programs · updated ${p.updated.replace("T"," ")} UTC`;
   await loadWatch();
   const h = (location.hash || "").slice(1);
@@ -122,9 +122,17 @@ function jsLinks(arr){
   }).join("")}</div>`;
 }
 function bypassChips(e){
+  if(e.relocked) return `<div class="chips"><span class="mut">target:</span><a class="chip sub" href="${esc(e.target)}" target="_blank" rel="noopener">${esc(e.target)}</a> <span class="chip" style="color:var(--warn);border-color:var(--warn)">re-locked, snapshot kept</span></div>` + snapFor(e.target);
   const t = e.target ? `<div class="chips"><span class="mut">target:</span><a class="chip sub" href="${esc(e.target)}" target="_blank" rel="noopener">${esc(e.target)}</a> <span class="mut">was ${esc(String(e.base||403))}</span></div>` : "";
-  const w = (e.techniques||[]).map(x=>`<code class="chip ep">${esc(x.t)} → ${esc(String(x.s))}</code>`).join("");
-  return t + (w?`<div class="chips"><span class="mut">bypasses:</span>${w}</div>`:"");
+  const w = (e.techniques||[]).map(x=>`<code class="chip ep" title="${x.sha?("snapshot "+esc(x.sha)):""}">${esc(x.t)} → ${esc(String(x.s))}</code>`).join("");
+  return t + (w?`<div class="chips"><span class="mut">bypasses:</span>${w}</div>`:"") + snapFor(e.target);
+}
+function snapFor(target){
+  const items = Object.values(EV).filter(v => v.target === target && v.snap);
+  if(!items.length) return "";
+  return items.slice(0,6).map(v => `<details class="snap"><summary>📸 snapshot · ${esc(v.tech)} · ${(v.snap.bytes||0).toLocaleString()} bytes · ${esc(v.snap.captured||v.first||"")}${v.relocked?` · <span style="color:var(--warn)">re-locked ${esc(v.relocked)}</span>`:""}</summary>
+    <div class="mut" style="font-size:11px;margin:4px 0">sha256: ${esc(v.snap.sha256||"")}</div>
+    <pre class="snapbody">${esc(v.snap.snippet||"")}</pre></details>`).join("");
 }
 function evRow(e){
   // new-feature events carry the actual new endpoints / GraphQL ops / feature flags, plus the new JS files

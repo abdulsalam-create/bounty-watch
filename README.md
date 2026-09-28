@@ -34,7 +34,7 @@ For programs on your watchlist (your authorized, in-scope assets), each scan pro
 - **Headers**: `X-Forwarded-For`, `X-Forwarded-Host`, `X-Original-URL`, `X-Rewrite-URL`, `X-Custom-IP-Authorization`, `Referer`, and more.
 - **Method**: `POST` / `PUT` / `PATCH` / `TRACE` where `GET` is blocked.
 
-Hits appear on the dashboard (type `bypass`) with the exact technique and resulting status, and at the top of the alert email. They are **candidate** bypasses to verify by hand; the detector requires a real, non-empty response that differs from the 403 body to cut false positives. Set `BW_BYPASS=0` to disable. Only watchlist in-scope hosts are ever probed.
+Every successful bypass is **snapshotted** as evidence (SHA-256 hash, byte size, timestamp) so you keep proof even if the endpoint is **re-locked** later (re-locks are detected and dated automatically). The response snippet is stored only with `BW_SNAP_BODY=1`, since this repo is public. Hits appear on the dashboard (type `bypass`) with the exact technique and resulting status, and at the top of the alert email. They are **candidate** bypasses to verify by hand; the detector requires a real, non-empty response that differs from the 403 body to cut false positives. Set `BW_BYPASS=0` to disable. Only watchlist in-scope hosts are ever probed.
 
 ## Hunt score
 Every program gets a 0–100 **hunt score** (see the 🎯 tab) ranking how likely it is to hold fresh, under-hunted attack surface. It is an additive model over signals this tool actually collects:

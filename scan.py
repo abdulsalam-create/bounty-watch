@@ -18,6 +18,7 @@ SRC = os.environ.get("BW_SRC") or "https://raw.githubusercontent.com/arkadiyt/bo
 PLATFORMS = {"h1": "hackerone", "bc": "bugcrowd", "ywh": "yeswehack", "it": "intigriti"}
 SNAP, FPS, WATCH, META = "data/snapshot.json", "data/fingerprints.json", "watchlist.json", "data/meta.json"
 PROGS, CHANGES, ALERT = "docs/data/programs.json", "docs/data/changes.json", "alert.md"
+EVID = "docs/data/evidence.json"  # snapshots of successful 403/401 bypasses (preserved through re-locks)
 DIGEST_STATE, DIGEST, DIGEST_HOUR = "data/digest.json", "digest.md", 6  # daily scope digest after 06:00 UTC
 FEED_DAYS, MAX_URLS, TIMEOUT = 90, 25, 10
 UA = {"User-Agent": "Mozilla/5.0 (bounty-watch; +https://github.com/abdulsalam-create/bounty-watch)"}
@@ -559,27 +560,28 @@ def probe(url, method="GET", headers=None, timeout=9):
     try:
         req = urllib.request.Request(url, headers=h, method=method)
         with _OPENER.open(req, timeout=timeout) as r:
-            return r.status, len(r.read(300_000)), r.headers.get("Location", "")
+            body = r.read(300_000)
+            return r.status, len(body), r.headers.get("Location", ""), body
     except urllib.error.HTTPError as e:
         try:
             body = e.read(300_000)
         except Exception:  # noqa: BLE001
             body = b""
-        return e.code, len(body), (e.headers.get("Location", "") if e.headers else "")
+        return e.code, len(body), (e.headers.get("Location", "") if e.headers else ""), body
     except Exception:  # noqa: BLE001
-        return None, 0, ""
+        return None, 0, "", b""
 
 
 def bypass_403(url):
     """Try common 403/401 bypass techniques on a single URL. Returns [(technique, status, len)]."""
-    base_status, base_len, _ = probe(url)
+    base_status, base_len, _, _ = probe(url)
     if base_status not in (401, 403):
         return []
     u = urllib.parse.urlsplit(url)
     origin = f"{u.scheme}://{u.netloc}"
     path = u.path or "/"
     hits, ip = [], "127.0.0.1"
-    root_status, root_len, _ = probe(origin + "/")  # homepage baseline (for X-Original-URL noise)
+    root_status, root_len, _, _ = probe(origin + "/")  # homepage baseline (for X-Original-URL noise)
 
     def real(st, ln):  # a genuine, non-empty bypass that differs from the 403 body
         return st in BYPASS_SUCCESS and ln > 0 and ln != base_len
@@ -588,37 +590,84 @@ def bypass_403(url):
             path + "%09", path + "?", path + "/..;/", path + "..;/", path + ".json", path + ";/",
             "/./" + path.lstrip("/"), (path.upper() if path.lower() != path else path + "/.")}
     for m in muts:
-        st, ln, _ = probe(origin + m)
+        st, ln, _, body = probe(origin + m)
         if real(st, ln):
-            hits.append((f"path {m}", st, ln))
+            hits.append((f"path {m}", st, ln, body))
 
     ip_headers = [{"X-Forwarded-For": ip}, {"X-Forwarded-Host": ip}, {"X-Originating-IP": ip},
                   {"X-Remote-IP": ip}, {"X-Client-IP": ip}, {"X-Host": ip},
                   {"X-Custom-IP-Authorization": ip}, {"X-Forwarded-Server": "localhost"}, {"Referer": origin + path}]
     for h in ip_headers:
-        st, ln, _ = probe(url, headers=h)  # same blocked URL, spoofed header
+        st, ln, _, body = probe(url, headers=h)  # same blocked URL, spoofed header
         if real(st, ln):
-            hits.append((f"header {next(iter(h))}: {h[next(iter(h))]}", st, ln))
+            hits.append((f"header {next(iter(h))}: {h[next(iter(h))]}", st, ln, body))
 
     # X-Original-URL / X-Rewrite-URL: request "/" but ask for the blocked path.
     # Only a hit if it differs from BOTH the 403 body and the plain homepage (else it's just the homepage).
     for name in ("X-Original-URL", "X-Rewrite-URL"):
-        st, ln, _ = probe(origin + "/", headers={name: path})
+        st, ln, _, body = probe(origin + "/", headers={name: path})
         if real(st, ln) and ln != root_len:
-            hits.append((f"header {name}: {path}", st, ln))
+            hits.append((f"header {name}: {path}", st, ln, body))
 
     for meth in ("POST", "PUT", "PATCH", "TRACE"):  # GET blocked but another verb allowed
-        st, ln, _ = probe(url, method=meth)
+        st, ln, _, body = probe(url, method=meth)
         if st in BYPASS_SUCCESS and st != base_status and ln > 0:
-            hits.append((f"method {meth}", st, ln))
+            hits.append((f"method {meth}", st, ln, body))
     return hits[:14]
 
 
+def snapshot(body):
+    """Preserve evidence of what was accessed, in case the endpoint is re-locked later.
+
+    Hash + size + timestamp are always kept (proof without exposure). The response snippet is
+    only stored when BW_SNAP_BODY=1, since this repo is public and the content could be sensitive.
+    """
+    snap = {"sha256": hashlib.sha256(body).hexdigest(), "bytes": len(body),
+            "captured": NOW.isoformat(timespec="minutes")}
+    if os.environ.get("BW_SNAP_BODY") == "1":
+        txt = re.sub(r"<script.*?</script>|<style.*?</style>", " ", body.decode("utf-8", "ignore"), flags=re.S | re.I)
+        snap["snippet"] = re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", txt)).strip()[:1400]
+    return snap
+
+
+def rerun(base_url, label):
+    """Re-issue a stored bypass technique to check if it still works (re-lock detection)."""
+    u = urllib.parse.urlsplit(base_url)
+    origin, path = f"{u.scheme}://{u.netloc}", (u.path or "/")
+    if label.startswith("path "):
+        return probe(origin + label[5:])[0]
+    if label.startswith("method "):
+        return probe(base_url, method=label[7:])[0]
+    if label.startswith("header "):
+        name, _, val = label[7:].partition(": ")
+        tgt = origin + "/" if name in ("X-Original-URL", "X-Rewrite-URL") else base_url
+        return probe(tgt, headers={name: val})[0]
+    return None
+
+
 def hunt_bypass(key, prog, roots, state, events, first):
-    """Enumerate a few sensitive paths on in-scope hosts; on 401/403, try to bypass. Watchlist only."""
+    """Enumerate a few sensitive paths on in-scope hosts; on 401/403, try to bypass. Watchlist only.
+    Each successful bypass is snapshotted (hash + size + snippet) as evidence, and re-checked each run
+    so a later re-lock is recorded rather than losing the proof that it once worked."""
     if os.environ.get("BW_BYPASS", "1") != "1":
         return
     seen = state.setdefault("bypass", {})
+
+    # re-lock check: re-run known bypasses on this program's hosts
+    for bid, rec in list(seen.items()):
+        if not isinstance(rec, dict) or rec.get("relocked"):
+            continue
+        if not any(rec.get("target", "").startswith(r) for r in roots):
+            continue
+        st = rerun(rec["target"], rec["tech"])
+        rec["last_status"] = st
+        if st in (401, 403, None) and not first:
+            rec["relocked"] = TODAY
+            events.append(ev("bypass", key, prog,
+                             f"previously-working bypass re-locked on {rec['target']} ({rec['tech']}); snapshot kept",
+                             target=rec["target"], base=st, relocked=True))
+        time.sleep(0.3)
+
     tried = 0
     for root in roots[:6]:
         for pth in BYPASS_PATHS:
@@ -626,16 +675,19 @@ def hunt_bypass(key, prog, roots, state, events, first):
                 return
             tried += 1
             url = root + pth
-            st, _, _ = probe(url)
+            st, _, _, _ = probe(url)
             if st not in (401, 403):
                 continue
             fresh = [h for h in bypass_403(url) if f"{url}|{h[0]}" not in seen]
-            for h in fresh:
-                seen[f"{url}|{h[0]}"] = TODAY
+            for label, s, l, body in fresh:
+                seen[f"{url}|{label}"] = {"target": url, "tech": label, "status": s, "bytes": l,
+                                         "first": TODAY, "relocked": "", "snap": snapshot(body)}
             if fresh and not first:
                 events.append(ev("bypass", key, prog,
-                                 f"{st} bypass on {url}: " + "; ".join(f"{t} -> {s}" for t, s, _ in fresh[:6]),
-                                 target=url, base=st, techniques=[{"t": t, "s": s, "l": l} for t, s, l in fresh[:14]]))
+                                 f"{st} bypass on {url}: " + "; ".join(f"{t} -> {s}" for t, s, _, _ in fresh[:6]),
+                                 target=url, base=st,
+                                 techniques=[{"t": t, "s": s, "l": l, "sha": seen[f'{url}|{t}']['snap']['sha256'][:12]}
+                                             for t, s, l, _ in fresh[:14]]))
             time.sleep(0.4)
 
 
@@ -942,6 +994,14 @@ def main():
     save(SNAP, new)
     save(META, meta)
     save(FPS, fps, pretty=True)
+    # evidence log of successful 403/401 bypasses (snapshot kept even after a re-lock)
+    evid = {}
+    for k, st in fps.items():
+        for bid, rec in (st.get("bypass") or {}).items():
+            if isinstance(rec, dict) and rec.get("snap"):
+                evid[bid] = {"program": k, "name": (new.get(k) or {}).get("name", k),
+                             **{x: rec.get(x) for x in ("target", "tech", "status", "first", "relocked", "snap")}}
+    save(EVID, evid)
     write_alert(events, watch, first=old is None)
     write_digest(events)
     write_inscope_digest(events)
