@@ -539,6 +539,106 @@ def locate_endpoints(api, scope):
     return sorted(set(upgraded))[:60], live
 
 
+# ---------- 403/401 bypass probing (watchlist in-scope hosts only = authorized) ----------
+class _NoRedirect(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, *a, **k):  # see 3xx as a signal instead of following it
+        return None
+
+
+_OPENER = urllib.request.build_opener(_NoRedirect, urllib.request.HTTPSHandler(context=CTX))
+BYPASS_SUCCESS = {200, 201, 202, 203, 204, 206, 301, 302, 307, 308}
+BYPASS_PATHS = ["", "/admin", "/administrator", "/api", "/internal", "/dashboard", "/private",
+                "/.git/config", "/server-status", "/actuator", "/actuator/env", "/metrics", "/config", "/.env"]
+
+
+def probe(url, method="GET", headers=None, timeout=9):
+    """One request, no redirect-follow, never raises. Returns (status, body_len, location)."""
+    h = dict(UA)
+    if headers:
+        h.update(headers)
+    try:
+        req = urllib.request.Request(url, headers=h, method=method)
+        with _OPENER.open(req, timeout=timeout) as r:
+            return r.status, len(r.read(300_000)), r.headers.get("Location", "")
+    except urllib.error.HTTPError as e:
+        try:
+            body = e.read(300_000)
+        except Exception:  # noqa: BLE001
+            body = b""
+        return e.code, len(body), (e.headers.get("Location", "") if e.headers else "")
+    except Exception:  # noqa: BLE001
+        return None, 0, ""
+
+
+def bypass_403(url):
+    """Try common 403/401 bypass techniques on a single URL. Returns [(technique, status, len)]."""
+    base_status, base_len, _ = probe(url)
+    if base_status not in (401, 403):
+        return []
+    u = urllib.parse.urlsplit(url)
+    origin = f"{u.scheme}://{u.netloc}"
+    path = u.path or "/"
+    hits, ip = [], "127.0.0.1"
+    root_status, root_len, _ = probe(origin + "/")  # homepage baseline (for X-Original-URL noise)
+
+    def real(st, ln):  # a genuine, non-empty bypass that differs from the 403 body
+        return st in BYPASS_SUCCESS and ln > 0 and ln != base_len
+
+    muts = {path + "/", path + "/.", path + "//", "//" + path.lstrip("/"), "/%2e" + path, path + "%20",
+            path + "%09", path + "?", path + "/..;/", path + "..;/", path + ".json", path + ";/",
+            "/./" + path.lstrip("/"), (path.upper() if path.lower() != path else path + "/.")}
+    for m in muts:
+        st, ln, _ = probe(origin + m)
+        if real(st, ln):
+            hits.append((f"path {m}", st, ln))
+
+    ip_headers = [{"X-Forwarded-For": ip}, {"X-Forwarded-Host": ip}, {"X-Originating-IP": ip},
+                  {"X-Remote-IP": ip}, {"X-Client-IP": ip}, {"X-Host": ip},
+                  {"X-Custom-IP-Authorization": ip}, {"X-Forwarded-Server": "localhost"}, {"Referer": origin + path}]
+    for h in ip_headers:
+        st, ln, _ = probe(url, headers=h)  # same blocked URL, spoofed header
+        if real(st, ln):
+            hits.append((f"header {next(iter(h))}: {h[next(iter(h))]}", st, ln))
+
+    # X-Original-URL / X-Rewrite-URL: request "/" but ask for the blocked path.
+    # Only a hit if it differs from BOTH the 403 body and the plain homepage (else it's just the homepage).
+    for name in ("X-Original-URL", "X-Rewrite-URL"):
+        st, ln, _ = probe(origin + "/", headers={name: path})
+        if real(st, ln) and ln != root_len:
+            hits.append((f"header {name}: {path}", st, ln))
+
+    for meth in ("POST", "PUT", "PATCH", "TRACE"):  # GET blocked but another verb allowed
+        st, ln, _ = probe(url, method=meth)
+        if st in BYPASS_SUCCESS and st != base_status and ln > 0:
+            hits.append((f"method {meth}", st, ln))
+    return hits[:14]
+
+
+def hunt_bypass(key, prog, roots, state, events, first):
+    """Enumerate a few sensitive paths on in-scope hosts; on 401/403, try to bypass. Watchlist only."""
+    if os.environ.get("BW_BYPASS", "1") != "1":
+        return
+    seen = state.setdefault("bypass", {})
+    tried = 0
+    for root in roots[:6]:
+        for pth in BYPASS_PATHS:
+            if tried >= 45:
+                return
+            tried += 1
+            url = root + pth
+            st, _, _ = probe(url)
+            if st not in (401, 403):
+                continue
+            fresh = [h for h in bypass_403(url) if f"{url}|{h[0]}" not in seen]
+            for h in fresh:
+                seen[f"{url}|{h[0]}"] = TODAY
+            if fresh and not first:
+                events.append(ev("bypass", key, prog,
+                                 f"{st} bypass on {url}: " + "; ".join(f"{t} -> {s}" for t, s, _ in fresh[:6]),
+                                 target=url, base=st, techniques=[{"t": t, "s": s, "l": l} for t, s, l in fresh[:14]]))
+            time.sleep(0.4)
+
+
 def watch_checks(key, prog, fps, events):
     first = key not in fps
     state = fps.setdefault(key, {"fp": {}, "subs": {}, "eps": [], "chlog": {}, "apps": {}})
@@ -637,6 +737,9 @@ def watch_checks(key, prog, fps, events):
         if old and old != v and not first:
             events.append(ev("appversion", key, prog, f"{a}: {old} -> {v}"))
         state["apps"][a] = v
+
+    # 5. 403/401 bypass probing on in-scope hosts (authorized watchlist scope)
+    hunt_bypass(key, prog, roots, state, events, first)
 
 
 # ---------- hunt score ----------
@@ -845,7 +948,7 @@ def main():
 
 
 # Ranking of change types when the feed is ordered within a day (new features first).
-PRIORITY = {"takeover": 9, "feature": 8, "live-host": 7, "subdomain": 6, "new": 5,
+PRIORITY = {"bypass": 10, "takeover": 9, "feature": 8, "live-host": 7, "subdomain": 6, "new": 5,
             "scope+": 4, "appversion": 4, "changelog": 3, "deploy": 2, "resumed": 2, "scope-": 1, "suspended": 1}
 
 
@@ -942,7 +1045,7 @@ def write_alert(events, watch, first):
     back = [e for e in events if e["t"] == "resumed" and e["k"] not in watch and (_gap_from(e) or 0) >= 3]
     mine = [e for e in events if e["k"] in watch]
     # highest-value watchlist signals, surfaced at the very top of the email
-    feats = [e for e in mine if e["t"] in ("feature", "takeover")]
+    feats = [e for e in mine if e["t"] in ("bypass", "feature", "takeover")]
     other_scope = sum(1 for e in events if e["t"].startswith("scope") and e["k"] not in watch)
     if not newp and not mine and not back:
         print("[i] nothing noteworthy")
@@ -950,9 +1053,13 @@ def write_alert(events, watch, first):
     line = lambda e: f"- **{e['n']}** (`{e['k']}`) {e['u']}\n  - {e['x']}"
     md = [f"# bounty-watch report {TODAY}\n"]
     if feats:
-        md += [f"## 🔥 New features / takeovers ({len(feats)})"]
+        md += [f"## 🔥 High-value: bypasses / new features / takeovers ({len(feats)})"]
         for e in feats:
             md.append(line(e))
+            if e["t"] == "bypass" and e.get("techniques"):
+                md.append(f"    - target: `{e.get('target', '')}` (was {e.get('base', '403')})")
+                for t in e["techniques"][:8]:
+                    md.append(f"    - {t['t']} -> {t['s']} ({t['l']} bytes)")
             if e["t"] == "feature" and e.get("api"):
                 md.append("    - new endpoints: " + ", ".join(f"`{a}`" for a in e["api"][:15]))
             if e.get("js"):

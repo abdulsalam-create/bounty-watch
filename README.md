@@ -27,6 +27,15 @@ Edit `watchlist.json`, or use the ☆ buttons on the dashboard after you save a 
 Changing the watchlist triggers a scan, which records a baseline for new entries.
 
 
+
+## 403 / 401 bypass hunting (watchlist)
+For programs on your watchlist (your authorized, in-scope assets), each scan probes a short list of commonly-restricted paths on the in-scope hosts (e.g. `/admin`, `/api`, `/.git/config`, `/actuator`). Where one returns **401/403**, it tries standard bypass techniques and reports any that get through:
+- **Path**: trailing slash, `//`, `/.`, `/%2e`, `/..;/`, `%20`, `.json`, case, etc.
+- **Headers**: `X-Forwarded-For`, `X-Forwarded-Host`, `X-Original-URL`, `X-Rewrite-URL`, `X-Custom-IP-Authorization`, `Referer`, and more.
+- **Method**: `POST` / `PUT` / `PATCH` / `TRACE` where `GET` is blocked.
+
+Hits appear on the dashboard (type `bypass`) with the exact technique and resulting status, and at the top of the alert email. They are **candidate** bypasses to verify by hand; the detector requires a real, non-empty response that differs from the 403 body to cut false positives. Set `BW_BYPASS=0` to disable. Only watchlist in-scope hosts are ever probed.
+
 ## Hunt score
 Every program gets a 0–100 **hunt score** (see the 🎯 tab) ranking how likely it is to hold fresh, under-hunted attack surface. It is an additive model over signals this tool actually collects:
 
