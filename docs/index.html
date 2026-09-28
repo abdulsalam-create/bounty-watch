@@ -28,7 +28,7 @@
 <div class="bar" id="bar">
   <input type="search" id="q" placeholder="Filter by name, handle, asset…">
   <select id="plat"><option value="">All platforms</option><option value="h1">HackerOne</option><option value="bc">Bugcrowd</option><option value="ywh">YesWeHack</option><option value="it">Intigriti</option></select>
-  <select id="kind"><option value="">All change types</option><option>new</option><option>suspended</option><option>resumed</option><option>scope+</option><option>scope-</option><option>deploy</option><option>subdomain</option><option>feature</option><option>changelog</option><option>live-host</option><option>takeover</option><option>bypass</option><option>appversion</option></select>
+  <select id="kind"><option value="">All change types</option><option>new</option><option>suspended</option><option>resumed</option><option>scope+</option><option>scope-</option><option>deploy</option><option>subdomain</option><option>feature</option><option>changelog</option><option>live-host</option><option>takeover</option><option>bypass</option><option>secret</option><option>sourcemap</option><option>historical</option><option>appversion</option></select>
   <select id="stype" title="Programs whose scope includes this asset type"></select>
   <select id="sort"><option value="first">Newest programs first</option><option value="upd">Recently updated first</option><option value="bounty">Highest bounty</option><option value="name">Name A–Z</option></select>
   <select id="since"><option value="">Any time</option><option value="1">Last 24h</option><option value="7">Last 7 days</option><option value="30">Last 30 days</option><option value="90">Last 90 days</option></select>
@@ -139,6 +139,9 @@ function evRow(e){
   const feat = e.t === "feature" ? endpointChips(e.api, e.live) + chips("GraphQL", e.gql, "gql") + chips("feature flags", e.flags, "flag") + jsLinks(e.js)
     : e.t === "deploy" ? jsLinks(e.js)
     : e.t === "bypass" ? bypassChips(e)
+    : e.t === "secret" ? chips("findings", e.items, "ep")
+    : e.t === "sourcemap" ? (e.maps||[]).map(m=>`<div class="chips"><a class="chip ep" href="${esc(m)}" target="_blank" rel="noopener">${esc(m)}</a></div>`).join("")
+    : e.t === "historical" ? (e.urls||[]).slice(0,40).map(u=>`<a class="chip sub" href="${esc(u)}" target="_blank" rel="noopener">${esc(u.replace(/^https?:\/\//,""))}</a>`).join(" ")
     : (e.t === "subdomain" || e.t === "live-host") ? chips(e.t === "live-host" ? "live" : "new subdomains", e.hosts || e.subs, "sub") : "";
   const detail = e.t === "feature" ? `<div class="x"><b>New features detected</b> from a changed JS bundle</div>` : `<div class="x">${esc(e.x)}</div>`;
   return `<div class="row"><div class="top"><span class="tag t-${esc(e.t)}">${esc(e.t)}</span><a href="${esc(e.u)}" target="_blank" rel="noopener">${esc(e.n)}</a>
@@ -191,7 +194,7 @@ function render(){
     $("#more").hidden = keys.length <= limit;
   } else if(tab === "features"){
     const since = cutoff();
-    const ev = F.filter(e => (e.t==="feature"||e.t==="takeover"||e.t==="bypass") && (!since || e.d >= since)
+    const ev = F.filter(e => (["feature","takeover","bypass","secret","sourcemap","historical"].includes(e.t)) && (!since || e.d >= since)
       && (!$("#plat").value || e.k.startsWith($("#plat").value+":")) && (!$("#mine").checked || W.includes(e.k))
       && match(e.k, e.n+" "+e.x));
     if(!$("#q").value) html.push(`<p class="mut">New code features (endpoints, GraphQL ops, feature flags) and takeovers spotted on watchlist programs. This is the freshest, least-hunted attack surface. ${ev.length} in range.</p>`);

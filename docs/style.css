@@ -44,3 +44,5 @@ details ul{margin:4px 0;padding-left:18px;max-height:240px;overflow:auto;word-br
 .stbadge.s2{background:#16a34a}.stbadge.s3{background:#0891b2}.stbadge.s4{background:#d97706}.stbadge.s5{background:#dc2626}
 .snap{margin-top:6px}.snap summary{cursor:pointer;color:var(--acc);font-size:12px}
 .snapbody{white-space:pre-wrap;word-break:break-word;max-height:220px;overflow:auto;background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:8px;font:11px/1.5 ui-monospace,monospace;color:var(--mut)}
+.t-bypass,.t-secret,.t-sourcemap{color:#dc2626;border-color:#dc2626;font-weight:700}
+.t-historical{color:#0891b2;border-color:#0891b2}
