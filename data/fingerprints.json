@@ -837,13 +837,13 @@
      "preferences.atlassian.com/rest/forms/config"
     ],
     "gen": "",
-    "hash": "6262f4127dec",
+    "hash": "0ec886380fd6",
     "js": [
      "api-fetch.min.js",
      "atl-global.min.js",
      "atl-onetrust-wrapper.min.js",
      "blockEmbedLazyLoad.js",
-     "e-202639.js",
+     "e-202640.js",
      "frontend.min.js",
      "hooks.min.js",
      "i18n.min.js",
@@ -875,7 +875,7 @@
      "https://atlassianblog.wpengine.com/wp-includes/js/dist/script-modules/block-library/navigation/view.min.js",
      "https://atlassianblog.wpengine.com/wp-includes/js/dist/script-modules/block-library/search/view.min.js",
      "https://atlassianblog.wpengine.com/wp-includes/js/dist/url.min.js",
-     "https://stats.wp.com/e-202639.js"
+     "https://stats.wp.com/e-202640.js"
     ],
     "powered": "",
     "server": "AtlassianEdge",
