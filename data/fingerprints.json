@@ -1413,7 +1413,7 @@
      "file-storage-front.eu-east-1.indriverapp.com/api/v1/files/019f369f-8eaf-7ccb-a95b-a85b11066667"
     ],
     "gen": "",
-    "hash": "15b851ec234b",
+    "hash": "05afe7cee390",
     "js": [
      "1950-9618c963e229110d.js",
      "4640.59a33104f46018aa.js",
@@ -1430,11 +1430,11 @@
      "main-91c7d55e570faf16.js",
      "polyfills-42372ed130431b0a.js",
      "proxy-smart-script",
-     "webpack-f5b5f7d74b1097b8.js"
+     "webpack-faa985224fd680b4.js"
     ],
     "jsurls": [
-     "https://cargo.indrive.com/_next/static/5HzjCL7gpGSs7Y12hF5Np/_buildManifest.js",
-     "https://cargo.indrive.com/_next/static/5HzjCL7gpGSs7Y12hF5Np/_ssgManifest.js",
+     "https://cargo.indrive.com/_next/static/T1CQ8B9Lc6d1ETGJw10NQ/_buildManifest.js",
+     "https://cargo.indrive.com/_next/static/T1CQ8B9Lc6d1ETGJw10NQ/_ssgManifest.js",
      "https://cargo.indrive.com/_next/static/chunks/1950-9618c963e229110d.js",
      "https://cargo.indrive.com/_next/static/chunks/4640.59a33104f46018aa.js",
      "https://cargo.indrive.com/_next/static/chunks/4774.919fa601081d6b27.js",
@@ -1447,7 +1447,7 @@
      "https://cargo.indrive.com/_next/static/chunks/pages/_app-3ed06c6fdcc660eb.js",
      "https://cargo.indrive.com/_next/static/chunks/pages/delivery-09bf5e331eb48cf7.js",
      "https://cargo.indrive.com/_next/static/chunks/polyfills-42372ed130431b0a.js",
-     "https://cargo.indrive.com/_next/static/chunks/webpack-f5b5f7d74b1097b8.js",
+     "https://cargo.indrive.com/_next/static/chunks/webpack-faa985224fd680b4.js",
      "https://cargo.indrive.com/proxy-smart-script"
     ],
     "powered": "Next.js",
@@ -1562,7 +1562,7 @@
      "file-storage-front.eu-east-1.indriverapp.com/api/v1/files/019f22b5-1e5e-744e-94f0-cc284840eca2"
     ],
     "gen": "",
-    "hash": "2a9ca12a336e",
+    "hash": "23259b3fa623",
     "js": [
      "1283.442811a82be86fa1.js",
      "1359.4756d75951894201.js",
@@ -1582,11 +1582,11 @@
      "main-91c7d55e570faf16.js",
      "polyfills-42372ed130431b0a.js",
      "proxy-smart-script",
-     "webpack-f5b5f7d74b1097b8.js"
+     "webpack-faa985224fd680b4.js"
     ],
     "jsurls": [
-     "https://indrive.com/_next/static/5HzjCL7gpGSs7Y12hF5Np/_buildManifest.js",
-     "https://indrive.com/_next/static/5HzjCL7gpGSs7Y12hF5Np/_ssgManifest.js",
+     "https://indrive.com/_next/static/T1CQ8B9Lc6d1ETGJw10NQ/_buildManifest.js",
+     "https://indrive.com/_next/static/T1CQ8B9Lc6d1ETGJw10NQ/_ssgManifest.js",
      "https://indrive.com/_next/static/chunks/1283.442811a82be86fa1.js",
      "https://indrive.com/_next/static/chunks/1359.4756d75951894201.js",
      "https://indrive.com/_next/static/chunks/2304.dded142849186f6b.js",
@@ -1602,7 +1602,7 @@
      "https://indrive.com/_next/static/chunks/pages/_app-3ed06c6fdcc660eb.js",
      "https://indrive.com/_next/static/chunks/pages/index-06674f2e454c01ff.js",
      "https://indrive.com/_next/static/chunks/polyfills-42372ed130431b0a.js",
-     "https://indrive.com/_next/static/chunks/webpack-f5b5f7d74b1097b8.js",
+     "https://indrive.com/_next/static/chunks/webpack-faa985224fd680b4.js",
      "https://indrive.com/proxy-smart-script"
     ],
     "powered": "Next.js",
@@ -1646,7 +1646,7 @@
      "file-storage-front.eu-east-1.indriverapp.com/api/v1/files/019f22b5-1e5e-744e-94f0-cc284840eca2"
     ],
     "gen": "",
-    "hash": "2a9ca12a336e",
+    "hash": "23259b3fa623",
     "js": [
      "1283.442811a82be86fa1.js",
      "1359.4756d75951894201.js",
@@ -1666,11 +1666,11 @@
      "main-91c7d55e570faf16.js",
      "polyfills-42372ed130431b0a.js",
      "proxy-smart-script",
-     "webpack-f5b5f7d74b1097b8.js"
+     "webpack-faa985224fd680b4.js"
     ],
     "jsurls": [
-     "https://indriver.com/_next/static/5HzjCL7gpGSs7Y12hF5Np/_buildManifest.js",
-     "https://indriver.com/_next/static/5HzjCL7gpGSs7Y12hF5Np/_ssgManifest.js",
+     "https://indriver.com/_next/static/T1CQ8B9Lc6d1ETGJw10NQ/_buildManifest.js",
+     "https://indriver.com/_next/static/T1CQ8B9Lc6d1ETGJw10NQ/_ssgManifest.js",
      "https://indriver.com/_next/static/chunks/1283.442811a82be86fa1.js",
      "https://indriver.com/_next/static/chunks/1359.4756d75951894201.js",
      "https://indriver.com/_next/static/chunks/2304.dded142849186f6b.js",
@@ -1686,7 +1686,7 @@
      "https://indriver.com/_next/static/chunks/pages/_app-3ed06c6fdcc660eb.js",
      "https://indriver.com/_next/static/chunks/pages/index-06674f2e454c01ff.js",
      "https://indriver.com/_next/static/chunks/polyfills-42372ed130431b0a.js",
-     "https://indriver.com/_next/static/chunks/webpack-f5b5f7d74b1097b8.js",
+     "https://indriver.com/_next/static/chunks/webpack-faa985224fd680b4.js",
      "https://indriver.com/proxy-smart-script"
     ],
     "powered": "Next.js",
@@ -1830,15 +1830,15 @@
    "https://media.indrive.com": {
     "eps": [],
     "gen": "",
-    "hash": "08766f0f3e4b",
+    "hash": "9f587ba8b710",
     "js": [
-     "frontify-bootstrap.fc3a8b328a816080.js",
-     "frontify-runtime.e981c766cc0e19be.js",
+     "frontify-bootstrap.8830753f3189356a.js",
+     "frontify-runtime.a235018073bcbdd6.js",
      "frontify-vendors.36a64fb34edb37c0.js"
     ],
     "jsurls": [
-     "https://cdn.frontify.com/js/frontify-bootstrap.fc3a8b328a816080.js",
-     "https://cdn.frontify.com/js/frontify-runtime.e981c766cc0e19be.js",
+     "https://cdn.frontify.com/js/frontify-bootstrap.8830753f3189356a.js",
+     "https://cdn.frontify.com/js/frontify-runtime.a235018073bcbdd6.js",
      "https://cdn.frontify.com/js/frontify-vendors.36a64fb34edb37c0.js"
     ],
     "powered": "",

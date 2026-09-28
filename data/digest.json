@@ -1,1 +1,1 @@
-{"last":"2026-09-28","pending":[]}
+{"last":"2026-09-28","pending":[{"d":"2026-09-28","t":"scope-","k":"it:dpgm/libelle","n":"Libelle","u":"https://www.intigriti.com/programs/dpgm/libelle/detail","x":"scope removed: actie.libelle.nl","a":["actie.libelle.nl"],"f":"scope","b":2200},{"d":"2026-09-28","t":"scope+","k":"it:dpgm/libelle","n":"Libelle","u":"https://www.intigriti.com/programs/dpgm/libelle/detail","x":"out-of-scope added: actie.libelle.nl","a":["actie.libelle.nl"],"f":"out-of-scope","b":2200}]}
