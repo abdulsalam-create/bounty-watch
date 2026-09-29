@@ -21,11 +21,7 @@ PROGS, CHANGES, ALERT = "docs/data/programs.json", "docs/data/changes.json", "al
 EVID = "docs/data/evidence.json"  # snapshots of successful 403/401 bypasses (preserved through re-locks)
 DIGEST_STATE, DIGEST, DIGEST_HOUR = "data/digest.json", "digest.md", 6  # daily scope digest after 06:00 UTC
 FEED_DAYS, MAX_URLS, TIMEOUT = 90, 25, 10
-# A real browser UA: many sites silently block tool/bot user-agents (per Haddix's DEF CON 34 talk),
-# which was quietly costing us fingerprint, endpoint and bypass coverage.
-UA = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
-                    "(KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
-      "Accept-Language": "en-US,en;q=0.9"}
+UA = {"User-Agent": "Mozilla/5.0 (bounty-watch; +https://github.com/abdulsalam-create/bounty-watch)"}
 NOW = datetime.now(timezone.utc)
 TODAY = NOW.strftime("%Y-%m-%d")
 CTX = ssl.create_default_context()
@@ -307,114 +303,6 @@ def js_endpoints(bundle_origins):
         for r in ex.map(one, list(bundle_origins)[:20]):
             found.update(r)
     return sorted(found)
-
-
-# Deeper JS analysis (per Haddix's talk): secrets, interesting comments, and leaking source maps.
-SECRET_RES = [
-    ("AWS key", re.compile(r"AKIA[0-9A-Z]{16}")),
-    ("Google API key", re.compile(r"AIza[0-9A-Za-z\-_]{35}")),
-    ("Slack token", re.compile(r"xox[baprs]-[0-9A-Za-z-]{10,}")),
-    ("Stripe live key", re.compile(r"sk_live_[0-9A-Za-z]{20,}")),
-    ("Private key", re.compile(r"-----BEGIN (?:RSA |EC )?PRIVATE KEY-----")),
-    ("JWT", re.compile(r"eyJ[A-Za-z0-9_-]{8,}\.eyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}")),
-    ("Firebase", re.compile(r"[a-z0-9.-]+\.firebaseio\.com")),
-    ("key assignment", re.compile(r"""(?i)(?:api[_-]?key|apikey|secret|access[_-]?token|auth[_-]?token|client[_-]?secret|password)["']?\s*[:=]\s*["'][A-Za-z0-9_\-\.]{12,}["']""")),
-]
-COMMENT_KW = re.compile(r"(?i)\b(todo|fixme|hack|password|secret|api[_-]?key|internal|admin|deprecated|do not|backdoor|remove before|staging|debug)\b")
-
-
-def analyze_bundles(bundle_origins):
-    """Download each changed JS bundle once: return (endpoints, secrets, comments, sourcemaps)."""
-    eps, secrets, comments, smaps = set(), [], [], []
-
-    def one(u):
-        try:
-            body, _ = get(u, limit=3_000_000)
-            return u, body.decode("utf-8", "ignore")
-        except Exception:  # noqa: BLE001
-            return u, ""
-
-    with ThreadPoolExecutor(6) as ex:
-        results = list(ex.map(one, list(bundle_origins)[:20]))
-    for u, text in results:
-        if not text:
-            continue
-        fname = u.split("?")[0].rsplit("/", 1)[-1]
-        for e in extract_endpoints(text, ""):
-            if e.startswith(("gql:", "flag:")) or "." in e.split("/")[0]:
-                eps.add(e)
-            else:
-                for origin in bundle_origins.get(u, {""}):
-                    host = re.sub(r"^https?://", "", origin)
-                    eps.add((host + e) if host else e)
-        for name, rx in SECRET_RES:
-            for m in list(dict.fromkeys(rx.findall(text)))[:5]:
-                secrets.append(f"{name}: {str(m)[:70]} ({fname})")
-        for c in re.findall(r"/\*(.{0,180}?)\*/|//([^\n]{0,180})", text):
-            cc = (c[0] or c[1]).strip()
-            if cc and COMMENT_KW.search(cc):
-                comments.append(f"{cc[:150]} ({fname})")
-        mm = re.search(r'sourceMappingURL=([^\s"\'*]+)', text)
-        if mm and not mm.group(1).startswith("data:"):
-            mu = mm.group(1)
-            if not mu.startswith("http"):
-                mu = u.rsplit("/", 1)[0] + "/" + mu.lstrip("/")
-            try:
-                b, _ = get(mu, limit=12_000_000)
-                sm = json.loads(b)
-            except Exception:  # noqa: BLE001
-                sm = None
-            if isinstance(sm, dict) and (sm.get("sources") or sm.get("mappings")):
-                srcpaths = sm.get("sources") or []
-                contents = [c for c in (sm.get("sourcesContent") or []) if c]
-                smaps.append({"url": mu, "files": len(srcpaths), "mined": bool(contents),
-                              "sample": [p for p in srcpaths if "node_modules" not in p][:8]})
-                if contents:  # reconstructed original source -> mine it (the real payoff)
-                    joined = "\n".join(contents)[:6_000_000]
-                    for e in extract_endpoints(joined, ""):
-                        if e.startswith(("gql:", "flag:")) or "." in e.split("/")[0]:
-                            eps.add(e)
-                        else:
-                            for origin in bundle_origins.get(u, {""}):
-                                host = re.sub(r"^https?://", "", origin)
-                                eps.add((host + e) if host else e)
-                    tag = "sourcemap " + mu.split("/")[-1]
-                    for name, rx in SECRET_RES:
-                        for m2 in list(dict.fromkeys(rx.findall(joined)))[:5]:
-                            secrets.append(f"{name}: {str(m2)[:70]} ({tag})")
-                    for c in re.findall(r"/\*(.{0,180}?)\*/|//([^\n]{0,180})", joined):
-                        cc = (c[0] or c[1]).strip()
-                        if cc and COMMENT_KW.search(cc):
-                            comments.append(f"{cc[:150]} ({tag})")
-    smaps = list({m["url"]: m for m in smaps}.values())[:20]
-    return sorted(eps), list(dict.fromkeys(secrets))[:60], list(dict.fromkeys(comments))[:30], smaps
-
-
-def wayback_endpoints(scope, seen):
-    """Pull historical URLs from the Wayback Machine (old / unlinked API versions often still live)."""
-    hosts, out = [], []
-    for u in web_targets(scope):
-        h = re.sub(r"^https?://", "", u).split("/")[0]
-        if h not in hosts:
-            hosts.append(h)
-    for host in hosts[:4]:
-        try:
-            q = urllib.parse.urlencode({"url": host + "/*", "output": "json", "fl": "original",
-                                        "collapse": "urlkey", "filter": "statuscode:200", "limit": "3000"})
-            body, _ = get("http://web.archive.org/cdx/search/cdx?" + q, timeout=60)
-            rows = json.loads(body or "[]")
-        except Exception:  # noqa: BLE001
-            continue
-        for r in rows[1:]:
-            orig = r[0] if isinstance(r, list) else r
-            if not re.search(r"/(api|v\d+|graphql|rest|internal|admin|private|swagger|graphiql)(/|\?|$)|\.js($|\?)", orig, re.I):
-                continue
-            pathq = re.sub(r"^https?://[^/]+", "", orig).split("#")[0]
-            if pathq and pathq not in seen:
-                seen.add(pathq)
-                out.append(orig)
-        time.sleep(2)
-    return out[:60]
 
 
 EXISTS_CODES = frozenset((200, 201, 204, 206, 400, 401, 403, 405, 406, 409, 415, 422, 429, 500, 501, 502, 503))
@@ -838,30 +726,10 @@ def watch_checks(key, prog, fps, events):
         if "err" not in fp or not old:
             state["fp"][url] = fp
 
-    # 2. new features / endpoints / secrets / source maps (the "what changed in the code" signal)
+    # 2. new features / endpoints / changelogs (the "what changed in the code" signal)
     eps = set(html_eps)
     if bundle_origins:
-        bundle_eps, secrets, comments, smaps = analyze_bundles(bundle_origins)
-        eps.update(bundle_eps)
-        state.setdefault("secrets", [])
-        state.setdefault("smaps", [])
-        found_sec = [f"secret: {x}" for x in secrets] + [f"comment: {x}" for x in comments]
-        new_sec = [x for x in found_sec if x not in state["secrets"]]
-        new_map = [m for m in smaps if m["url"] not in state["smaps"]]
-        if new_sec and not first:
-            events.append(ev("secret", key, prog,
-                             f"{len(new_sec)} secret/comment finding(s) in changed JS: " + "; ".join(new_sec[:6]),
-                             items=new_sec[:40]))
-        if new_map and not first:
-            files = sum(m.get("files", 0) for m in new_map)
-            mined = sum(1 for m in new_map if m.get("mined"))
-            events.append(ev("sourcemap", key, prog,
-                             f"{len(new_map)} leaking source map(s) exposing ~{files} original files"
-                             + (f" ({mined} with full source, mined for endpoints/secrets)" if mined else "") + ": "
-                             + ", ".join(m["url"] for m in new_map[:5]),
-                             maps=new_map[:20]))
-        state["secrets"] = (state["secrets"] + new_sec)[-600:]
-        state["smaps"] = (state["smaps"] + [m["url"] for m in new_map])[-200:]
+        eps.update(js_endpoints(bundle_origins))
     seen = set(state["eps"])
     fresh = sorted(e for e in eps if e not in seen)
     if fresh and not first and seen:  # need a prior baseline; skips the flood after a format/endpoint reset
@@ -924,17 +792,6 @@ def watch_checks(key, prog, fps, events):
 
     # 5. 403/401 bypass probing on in-scope hosts (authorized watchlist scope)
     hunt_bypass(key, prog, roots, state, events, first)
-
-    # 6. historical endpoints from the Wayback Machine (old/unlinked API versions still live)
-    if os.environ.get("BW_WAYBACK", "1") == "1":
-        wseen = set(state.setdefault("wayback", []))
-        hist = wayback_endpoints(prog["scope"], wseen)
-        if hist and not first:
-            apis = [h for h in hist if not re.search(r"\.js($|\?)", h, re.I)]
-            events.append(ev("historical", key, prog,
-                             f"{len(hist)} historical URL(s) from Wayback (possible dead/old API surface): "
-                             + ", ".join((apis or hist)[:8]), urls=hist[:60]))
-        state["wayback"] = sorted(wseen)[:4000]
 
 
 # ---------- hunt score ----------
@@ -1151,7 +1008,7 @@ def main():
 
 
 # Ranking of change types when the feed is ordered within a day (new features first).
-PRIORITY = {"bypass": 10, "secret": 10, "sourcemap": 9, "takeover": 9, "feature": 8, "historical": 6, "live-host": 7, "subdomain": 6, "new": 5,
+PRIORITY = {"bypass": 10, "takeover": 9, "feature": 8, "live-host": 7, "subdomain": 6, "new": 5,
             "scope+": 4, "appversion": 4, "changelog": 3, "deploy": 2, "resumed": 2, "scope-": 1, "suspended": 1}
 
 
@@ -1248,7 +1105,7 @@ def write_alert(events, watch, first):
     back = [e for e in events if e["t"] == "resumed" and e["k"] not in watch and (_gap_from(e) or 0) >= 3]
     mine = [e for e in events if e["k"] in watch]
     # highest-value watchlist signals, surfaced at the very top of the email
-    feats = [e for e in mine if e["t"] in ("bypass", "secret", "sourcemap", "feature", "takeover")]
+    feats = [e for e in mine if e["t"] in ("bypass", "feature", "takeover")]
     other_scope = sum(1 for e in events if e["t"].startswith("scope") and e["k"] not in watch)
     if not newp and not mine and not back:
         print("[i] nothing noteworthy")
@@ -1265,13 +1122,6 @@ def write_alert(events, watch, first):
                     md.append(f"    - {t['t']} -> {t['s']} ({t['l']} bytes)")
             if e["t"] == "feature" and e.get("api"):
                 md.append("    - new endpoints: " + ", ".join(f"`{a}`" for a in e["api"][:15]))
-            if e["t"] == "secret" and e.get("items"):
-                for x in e["items"][:12]:
-                    md.append(f"    - {x}")
-            if e["t"] == "sourcemap" and e.get("maps"):
-                for m in e["maps"][:8]:
-                    md.append(f"    - {m['url']} ({m.get('files', 0)} files"
-                              + (", full source" if m.get("mined") else "") + ")")
             if e.get("js"):
                 md.append("    - new JS: " + ", ".join(e["js"][:5]))
         md.append("")

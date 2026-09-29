@@ -36,16 +36,6 @@ For programs on your watchlist (your authorized, in-scope assets), each scan pro
 
 Every successful bypass is **snapshotted** as evidence (SHA-256 hash, byte size, timestamp) so you keep proof even if the endpoint is **re-locked** later (re-locks are detected and dated automatically). The response snippet is stored only with `BW_SNAP_BODY=1`, since this repo is public. Hits appear on the dashboard (type `bypass`) with the exact technique and resulting status, and at the top of the alert email. They are **candidate** bypasses to verify by hand; the detector requires a real, non-empty response that differs from the 403 body to cut false positives. Set `BW_BYPASS=0` to disable. Only watchlist in-scope hosts are ever probed.
 
-
-## Deeper watchlist recon (inspired by Jason Haddix's DEF CON 34 "Hackbots" talk)
-On top of endpoint mining, each scan of a watchlist program now also:
-- **Wayback Machine history**: pulls historical URLs from the Internet Archive for in-scope hosts, surfacing **old / unlinked API versions and admin paths that are often still live** (feed type `historical`). Set `BW_WAYBACK=0` to disable.
-- **Secrets & interesting comments in JS**: scans changed bundles for API keys, tokens, JWTs, private keys, and revealing comments (TODO/internal/admin/debug), reported as `secret` findings.
-- **Leaking source maps**: finds a live `.map`, then reconstructs the original source and mines it for endpoints, secrets and revealing comments, and lists the exposed source file paths (`sourcemap` finding). The mined endpoints and secrets feed the normal findings too.
-- **Browser User-Agent**: requests now use a real Chrome UA, because tool/bot user-agents get silently blocked (a point from the talk), which was quietly reducing coverage.
-
-`secret`, `sourcemap` and `bypass` findings ride at the top of the alert email and show in the 🔥 tab. These are candidate findings to verify by hand.
-
 ## Hunt score
 Every program gets a 0–100 **hunt score** (see the 🎯 tab) ranking how likely it is to hold fresh, under-hunted attack surface. It is an additive model over signals this tool actually collects:
 
