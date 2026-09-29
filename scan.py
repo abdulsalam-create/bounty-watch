@@ -355,18 +355,39 @@ def analyze_bundles(bundle_origins):
             if cc and COMMENT_KW.search(cc):
                 comments.append(f"{cc[:150]} ({fname})")
         mm = re.search(r'sourceMappingURL=([^\s"\'*]+)', text)
-        if mm:
+        if mm and not mm.group(1).startswith("data:"):
             mu = mm.group(1)
-            if not mu.startswith("http") and not mu.startswith("data:"):
+            if not mu.startswith("http"):
                 mu = u.rsplit("/", 1)[0] + "/" + mu.lstrip("/")
-            if mu.startswith("http"):
-                try:
-                    b, _ = get(mu, limit=200_000)
-                    if b'"sources"' in b or b'"mappings"' in b:
-                        smaps.append(mu)
-                except Exception:  # noqa: BLE001
-                    pass
-    return sorted(eps), list(dict.fromkeys(secrets))[:40], list(dict.fromkeys(comments))[:20], list(dict.fromkeys(smaps))[:20]
+            try:
+                b, _ = get(mu, limit=12_000_000)
+                sm = json.loads(b)
+            except Exception:  # noqa: BLE001
+                sm = None
+            if isinstance(sm, dict) and (sm.get("sources") or sm.get("mappings")):
+                srcpaths = sm.get("sources") or []
+                contents = [c for c in (sm.get("sourcesContent") or []) if c]
+                smaps.append({"url": mu, "files": len(srcpaths), "mined": bool(contents),
+                              "sample": [p for p in srcpaths if "node_modules" not in p][:8]})
+                if contents:  # reconstructed original source -> mine it (the real payoff)
+                    joined = "\n".join(contents)[:6_000_000]
+                    for e in extract_endpoints(joined, ""):
+                        if e.startswith(("gql:", "flag:")) or "." in e.split("/")[0]:
+                            eps.add(e)
+                        else:
+                            for origin in bundle_origins.get(u, {""}):
+                                host = re.sub(r"^https?://", "", origin)
+                                eps.add((host + e) if host else e)
+                    tag = "sourcemap " + mu.split("/")[-1]
+                    for name, rx in SECRET_RES:
+                        for m2 in list(dict.fromkeys(rx.findall(joined)))[:5]:
+                            secrets.append(f"{name}: {str(m2)[:70]} ({tag})")
+                    for c in re.findall(r"/\*(.{0,180}?)\*/|//([^\n]{0,180})", joined):
+                        cc = (c[0] or c[1]).strip()
+                        if cc and COMMENT_KW.search(cc):
+                            comments.append(f"{cc[:150]} ({tag})")
+    smaps = list({m["url"]: m for m in smaps}.values())[:20]
+    return sorted(eps), list(dict.fromkeys(secrets))[:60], list(dict.fromkeys(comments))[:30], smaps
 
 
 def wayback_endpoints(scope, seen):
@@ -826,17 +847,21 @@ def watch_checks(key, prog, fps, events):
         state.setdefault("smaps", [])
         found_sec = [f"secret: {x}" for x in secrets] + [f"comment: {x}" for x in comments]
         new_sec = [x for x in found_sec if x not in state["secrets"]]
-        new_map = [x for x in smaps if x not in state["smaps"]]
+        new_map = [m for m in smaps if m["url"] not in state["smaps"]]
         if new_sec and not first:
             events.append(ev("secret", key, prog,
                              f"{len(new_sec)} secret/comment finding(s) in changed JS: " + "; ".join(new_sec[:6]),
                              items=new_sec[:40]))
         if new_map and not first:
+            files = sum(m.get("files", 0) for m in new_map)
+            mined = sum(1 for m in new_map if m.get("mined"))
             events.append(ev("sourcemap", key, prog,
-                             f"{len(new_map)} leaking source map(s) (original source exposed): " + ", ".join(new_map[:5]),
+                             f"{len(new_map)} leaking source map(s) exposing ~{files} original files"
+                             + (f" ({mined} with full source, mined for endpoints/secrets)" if mined else "") + ": "
+                             + ", ".join(m["url"] for m in new_map[:5]),
                              maps=new_map[:20]))
         state["secrets"] = (state["secrets"] + new_sec)[-600:]
-        state["smaps"] = (state["smaps"] + new_map)[-200:]
+        state["smaps"] = (state["smaps"] + [m["url"] for m in new_map])[-200:]
     seen = set(state["eps"])
     fresh = sorted(e for e in eps if e not in seen)
     if fresh and not first and seen:  # need a prior baseline; skips the flood after a format/endpoint reset
@@ -1245,7 +1270,8 @@ def write_alert(events, watch, first):
                     md.append(f"    - {x}")
             if e["t"] == "sourcemap" and e.get("maps"):
                 for m in e["maps"][:8]:
-                    md.append(f"    - {m}")
+                    md.append(f"    - {m['url']} ({m.get('files', 0)} files"
+                              + (", full source" if m.get("mined") else "") + ")")
             if e.get("js"):
                 md.append("    - new JS: " + ", ".join(e["js"][:5]))
         md.append("")

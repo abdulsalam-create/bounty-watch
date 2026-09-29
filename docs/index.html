@@ -140,7 +140,7 @@ function evRow(e){
     : e.t === "deploy" ? jsLinks(e.js)
     : e.t === "bypass" ? bypassChips(e)
     : e.t === "secret" ? chips("findings", e.items, "ep")
-    : e.t === "sourcemap" ? (e.maps||[]).map(m=>`<div class="chips"><a class="chip ep" href="${esc(m)}" target="_blank" rel="noopener">${esc(m)}</a></div>`).join("")
+    : e.t === "sourcemap" ? (e.maps||[]).map(m=>`<div class="chips"><a class="chip ep" href="${esc(m.url)}" target="_blank" rel="noopener">${esc(m.url)}</a><span class="mut">${m.files||0} files${m.mined?", full source mined":""}</span>${(m.sample||[]).slice(0,6).map(p=>`<code class="chip sub">${esc(p)}</code>`).join("")}</div>`).join("")
     : e.t === "historical" ? (e.urls||[]).slice(0,40).map(u=>`<a class="chip sub" href="${esc(u)}" target="_blank" rel="noopener">${esc(u.replace(/^https?:\/\//,""))}</a>`).join(" ")
     : (e.t === "subdomain" || e.t === "live-host") ? chips(e.t === "live-host" ? "live" : "new subdomains", e.hosts || e.subs, "sub") : "";
   const detail = e.t === "feature" ? `<div class="x"><b>New features detected</b> from a changed JS bundle</div>` : `<div class="x">${esc(e.x)}</div>`;

@@ -41,7 +41,7 @@ Every successful bypass is **snapshotted** as evidence (SHA-256 hash, byte size,
 On top of endpoint mining, each scan of a watchlist program now also:
 - **Wayback Machine history**: pulls historical URLs from the Internet Archive for in-scope hosts, surfacing **old / unlinked API versions and admin paths that are often still live** (feed type `historical`). Set `BW_WAYBACK=0` to disable.
 - **Secrets & interesting comments in JS**: scans changed bundles for API keys, tokens, JWTs, private keys, and revealing comments (TODO/internal/admin/debug), reported as `secret` findings.
-- **Leaking source maps**: checks each JS bundle for a live `.map` that exposes original source code (`sourcemap` finding).
+- **Leaking source maps**: finds a live `.map`, then reconstructs the original source and mines it for endpoints, secrets and revealing comments, and lists the exposed source file paths (`sourcemap` finding). The mined endpoints and secrets feed the normal findings too.
 - **Browser User-Agent**: requests now use a real Chrome UA, because tool/bot user-agents get silently blocked (a point from the talk), which was quietly reducing coverage.
 
 `secret`, `sourcemap` and `bypass` findings ride at the top of the alert email and show in the 🔥 tab. These are candidate findings to verify by hand.
