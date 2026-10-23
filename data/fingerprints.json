@@ -6,7 +6,11 @@
   "bypass": {},
   "chlog": {},
   "eps": [
+   "album.link/api/full-length-url",
+   "album.link/api/redirect",
    "api.statsigcdn.com/v1",
+   "artist.link/api/full-length-url",
+   "artist.link/api/redirect",
    "featureassets.org/v1",
    "flag:enable-background",
    "flag:enable_log_event_compression",
@@ -19,7 +23,21 @@
    "linktree.com/api",
    "linktree.com/api/graphql",
    "linktree.com/api/token",
+   "mylink.page/api/full-length-url",
+   "mylink.page/api/redirect",
+   "odesli.co/api/full-length-url",
+   "odesli.co/api/redirect",
+   "odesli.com/api/full-length-url",
+   "odesli.com/api/redirect",
+   "playlist.link/api/full-length-url",
+   "playlist.link/api/redirect",
+   "pods.link/api/full-length-url",
+   "pods.link/api/redirect",
    "prodregistryv2.org/v1",
+   "song.link/api/full-length-url",
+   "song.link/api/redirect",
+   "songlink.io/api/full-length-url",
+   "songlink.io/api/redirect",
    "statsigapi.net/v1/sdk_exception"
   ],
   "fp": {
@@ -56,8 +74,8 @@
      "https://album.link/_next/static/chunks/pages/index-cf542d6355733246.js",
      "https://album.link/_next/static/chunks/polyfills-c67a75d1b6f99dc8.js",
      "https://album.link/_next/static/chunks/webpack-d5663aeda5022835.js",
-     "https://album.link/_next/static/kp8Ay8CI5uHNO3yWy6wEx/_buildManifest.js",
-     "https://album.link/_next/static/kp8Ay8CI5uHNO3yWy6wEx/_ssgManifest.js"
+     "https://album.link/_next/static/yi9-avHNai7-U4j_O6XJc/_buildManifest.js",
+     "https://album.link/_next/static/yi9-avHNai7-U4j_O6XJc/_ssgManifest.js"
     ],
     "powered": "Next.js",
     "server": "",
@@ -96,8 +114,8 @@
      "https://artist.link/_next/static/chunks/pages/index-cf542d6355733246.js",
      "https://artist.link/_next/static/chunks/polyfills-c67a75d1b6f99dc8.js",
      "https://artist.link/_next/static/chunks/webpack-d5663aeda5022835.js",
-     "https://artist.link/_next/static/kp8Ay8CI5uHNO3yWy6wEx/_buildManifest.js",
-     "https://artist.link/_next/static/kp8Ay8CI5uHNO3yWy6wEx/_ssgManifest.js"
+     "https://artist.link/_next/static/yi9-avHNai7-U4j_O6XJc/_buildManifest.js",
+     "https://artist.link/_next/static/yi9-avHNai7-U4j_O6XJc/_ssgManifest.js"
     ],
     "powered": "Next.js",
     "server": "",
@@ -106,13 +124,14 @@
    "https://linktr.ee": {
     "eps": [],
     "gen": "",
-    "hash": "92ce867b6ee8",
+    "hash": "39f498a8a03e",
     "js": [
      "0039985ct_1ky.js",
      "0b9cgtng55tc1.js",
      "0cz1d0mv5g_q7.js",
      "0ktr71a7-0s8t.js",
      "0mgssx2g5b0le.js",
+     "0qcyo_yroep92.js",
      "0wwmni9ezim9o.js",
      "101-lktprzph5.js",
      "1fisr-v6ps2ry.js",
@@ -121,7 +140,6 @@
      "2hxt8z682w_tb.js",
      "2ks_5djcbuzj2.js",
      "2yaalauc4c81u.js",
-     "3-an5__vn01gz.js",
      "33049gy17s29y.js",
      "39rpz8s2gbp_k.js",
      "3a9rq5byb0i5p.js",
@@ -143,6 +161,7 @@
      "https://linktr.ee/_marketing/_next/static/chunks/0cz1d0mv5g_q7.js",
      "https://linktr.ee/_marketing/_next/static/chunks/0ktr71a7-0s8t.js",
      "https://linktr.ee/_marketing/_next/static/chunks/0mgssx2g5b0le.js",
+     "https://linktr.ee/_marketing/_next/static/chunks/0qcyo_yroep92.js",
      "https://linktr.ee/_marketing/_next/static/chunks/0wwmni9ezim9o.js",
      "https://linktr.ee/_marketing/_next/static/chunks/101-lktprzph5.js",
      "https://linktr.ee/_marketing/_next/static/chunks/1fisr-v6ps2ry.js",
@@ -151,7 +170,6 @@
      "https://linktr.ee/_marketing/_next/static/chunks/2hxt8z682w_tb.js",
      "https://linktr.ee/_marketing/_next/static/chunks/2ks_5djcbuzj2.js",
      "https://linktr.ee/_marketing/_next/static/chunks/2yaalauc4c81u.js",
-     "https://linktr.ee/_marketing/_next/static/chunks/3-an5__vn01gz.js",
      "https://linktr.ee/_marketing/_next/static/chunks/33049gy17s29y.js",
      "https://linktr.ee/_marketing/_next/static/chunks/39rpz8s2gbp_k.js",
      "https://linktr.ee/_marketing/_next/static/chunks/3a9rq5byb0i5p.js",
@@ -172,13 +190,14 @@
    "https://linktree.com": {
     "eps": [],
     "gen": "",
-    "hash": "92ce867b6ee8",
+    "hash": "39f498a8a03e",
     "js": [
      "0039985ct_1ky.js",
      "0b9cgtng55tc1.js",
      "0cz1d0mv5g_q7.js",
      "0ktr71a7-0s8t.js",
      "0mgssx2g5b0le.js",
+     "0qcyo_yroep92.js",
      "0wwmni9ezim9o.js",
      "101-lktprzph5.js",
      "1fisr-v6ps2ry.js",
@@ -187,7 +206,6 @@
      "2hxt8z682w_tb.js",
      "2ks_5djcbuzj2.js",
      "2yaalauc4c81u.js",
-     "3-an5__vn01gz.js",
      "33049gy17s29y.js",
      "39rpz8s2gbp_k.js",
      "3a9rq5byb0i5p.js",
@@ -209,6 +227,7 @@
      "https://linktree.com/_marketing/_next/static/chunks/0cz1d0mv5g_q7.js",
      "https://linktree.com/_marketing/_next/static/chunks/0ktr71a7-0s8t.js",
      "https://linktree.com/_marketing/_next/static/chunks/0mgssx2g5b0le.js",
+     "https://linktree.com/_marketing/_next/static/chunks/0qcyo_yroep92.js",
      "https://linktree.com/_marketing/_next/static/chunks/0wwmni9ezim9o.js",
      "https://linktree.com/_marketing/_next/static/chunks/101-lktprzph5.js",
      "https://linktree.com/_marketing/_next/static/chunks/1fisr-v6ps2ry.js",
@@ -217,7 +236,6 @@
      "https://linktree.com/_marketing/_next/static/chunks/2hxt8z682w_tb.js",
      "https://linktree.com/_marketing/_next/static/chunks/2ks_5djcbuzj2.js",
      "https://linktree.com/_marketing/_next/static/chunks/2yaalauc4c81u.js",
-     "https://linktree.com/_marketing/_next/static/chunks/3-an5__vn01gz.js",
      "https://linktree.com/_marketing/_next/static/chunks/33049gy17s29y.js",
      "https://linktree.com/_marketing/_next/static/chunks/39rpz8s2gbp_k.js",
      "https://linktree.com/_marketing/_next/static/chunks/3a9rq5byb0i5p.js",
@@ -262,8 +280,8 @@
      "https://mylink.page/_next/static/chunks/pages/index-cf542d6355733246.js",
      "https://mylink.page/_next/static/chunks/polyfills-c67a75d1b6f99dc8.js",
      "https://mylink.page/_next/static/chunks/webpack-d5663aeda5022835.js",
-     "https://mylink.page/_next/static/kp8Ay8CI5uHNO3yWy6wEx/_buildManifest.js",
-     "https://mylink.page/_next/static/kp8Ay8CI5uHNO3yWy6wEx/_ssgManifest.js"
+     "https://mylink.page/_next/static/yi9-avHNai7-U4j_O6XJc/_buildManifest.js",
+     "https://mylink.page/_next/static/yi9-avHNai7-U4j_O6XJc/_ssgManifest.js"
     ],
     "powered": "Next.js",
     "server": "",
@@ -302,8 +320,8 @@
      "https://odesli.co/_next/static/chunks/pages/index-cf542d6355733246.js",
      "https://odesli.co/_next/static/chunks/polyfills-c67a75d1b6f99dc8.js",
      "https://odesli.co/_next/static/chunks/webpack-d5663aeda5022835.js",
-     "https://odesli.co/_next/static/kp8Ay8CI5uHNO3yWy6wEx/_buildManifest.js",
-     "https://odesli.co/_next/static/kp8Ay8CI5uHNO3yWy6wEx/_ssgManifest.js"
+     "https://odesli.co/_next/static/yi9-avHNai7-U4j_O6XJc/_buildManifest.js",
+     "https://odesli.co/_next/static/yi9-avHNai7-U4j_O6XJc/_ssgManifest.js"
     ],
     "powered": "Next.js",
     "server": "",
@@ -342,8 +360,8 @@
      "https://odesli.com/_next/static/chunks/pages/index-cf542d6355733246.js",
      "https://odesli.com/_next/static/chunks/polyfills-c67a75d1b6f99dc8.js",
      "https://odesli.com/_next/static/chunks/webpack-d5663aeda5022835.js",
-     "https://odesli.com/_next/static/kp8Ay8CI5uHNO3yWy6wEx/_buildManifest.js",
-     "https://odesli.com/_next/static/kp8Ay8CI5uHNO3yWy6wEx/_ssgManifest.js"
+     "https://odesli.com/_next/static/yi9-avHNai7-U4j_O6XJc/_buildManifest.js",
+     "https://odesli.com/_next/static/yi9-avHNai7-U4j_O6XJc/_ssgManifest.js"
     ],
     "powered": "Next.js",
     "server": "",
@@ -382,8 +400,8 @@
      "https://playlist.link/_next/static/chunks/pages/index-cf542d6355733246.js",
      "https://playlist.link/_next/static/chunks/polyfills-c67a75d1b6f99dc8.js",
      "https://playlist.link/_next/static/chunks/webpack-d5663aeda5022835.js",
-     "https://playlist.link/_next/static/kp8Ay8CI5uHNO3yWy6wEx/_buildManifest.js",
-     "https://playlist.link/_next/static/kp8Ay8CI5uHNO3yWy6wEx/_ssgManifest.js"
+     "https://playlist.link/_next/static/yi9-avHNai7-U4j_O6XJc/_buildManifest.js",
+     "https://playlist.link/_next/static/yi9-avHNai7-U4j_O6XJc/_ssgManifest.js"
     ],
     "powered": "Next.js",
     "server": "",
@@ -422,8 +440,8 @@
      "https://pods.link/_next/static/chunks/pages/index-cf542d6355733246.js",
      "https://pods.link/_next/static/chunks/polyfills-c67a75d1b6f99dc8.js",
      "https://pods.link/_next/static/chunks/webpack-d5663aeda5022835.js",
-     "https://pods.link/_next/static/kp8Ay8CI5uHNO3yWy6wEx/_buildManifest.js",
-     "https://pods.link/_next/static/kp8Ay8CI5uHNO3yWy6wEx/_ssgManifest.js"
+     "https://pods.link/_next/static/yi9-avHNai7-U4j_O6XJc/_buildManifest.js",
+     "https://pods.link/_next/static/yi9-avHNai7-U4j_O6XJc/_ssgManifest.js"
     ],
     "powered": "Next.js",
     "server": "",
@@ -462,8 +480,8 @@
      "https://song.link/_next/static/chunks/pages/index-cf542d6355733246.js",
      "https://song.link/_next/static/chunks/polyfills-c67a75d1b6f99dc8.js",
      "https://song.link/_next/static/chunks/webpack-d5663aeda5022835.js",
-     "https://song.link/_next/static/kp8Ay8CI5uHNO3yWy6wEx/_buildManifest.js",
-     "https://song.link/_next/static/kp8Ay8CI5uHNO3yWy6wEx/_ssgManifest.js"
+     "https://song.link/_next/static/yi9-avHNai7-U4j_O6XJc/_buildManifest.js",
+     "https://song.link/_next/static/yi9-avHNai7-U4j_O6XJc/_ssgManifest.js"
     ],
     "powered": "Next.js",
     "server": "",
@@ -502,8 +520,8 @@
      "https://songlink.io/_next/static/chunks/pages/index-cf542d6355733246.js",
      "https://songlink.io/_next/static/chunks/polyfills-c67a75d1b6f99dc8.js",
      "https://songlink.io/_next/static/chunks/webpack-d5663aeda5022835.js",
-     "https://songlink.io/_next/static/kp8Ay8CI5uHNO3yWy6wEx/_buildManifest.js",
-     "https://songlink.io/_next/static/kp8Ay8CI5uHNO3yWy6wEx/_ssgManifest.js"
+     "https://songlink.io/_next/static/yi9-avHNai7-U4j_O6XJc/_buildManifest.js",
+     "https://songlink.io/_next/static/yi9-avHNai7-U4j_O6XJc/_ssgManifest.js"
     ],
     "powered": "Next.js",
     "server": "",
