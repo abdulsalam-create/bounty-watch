@@ -987,8 +987,8 @@
    "https://trello.com/.env|path /.env.json": "2026-09-28"
   },
   "chlog": {
-   "https://api.trello.com/docs/changelog": "0791ad255673",
-   "https://trello.com/docs/changelog": "0791ad255673"
+   "https://api.trello.com/docs/changelog": "5c346cd9216c",
+   "https://trello.com/docs/changelog": "5c346cd9216c"
   },
   "eps": [
    "api.statsigcdn.com/v1",
@@ -1029,16 +1029,16 @@
      "flag:feature_gates"
     ],
     "gen": "",
-    "hash": "89568af94eaf",
+    "hash": "77afb8fcddee",
     "js": [
      "atl-onetrust-wrapper.min.js",
-     "trello-test-page.7755889c.js",
-     "trello-test-page.runtime.5bd36ba7.js"
+     "trello-test-page.37fda582.js",
+     "trello-test-page.runtime.1692dad2.js"
     ],
     "jsurls": [
      "https://atl-onetrust-wrapper.atlassian.com/assets/atl-onetrust-wrapper.min.js",
-     "https://trello-bifrost.prod-east.frontend.public.atl-paas.net/assets/trello-test-page.7755889c.js",
-     "https://trello-bifrost.prod-east.frontend.public.atl-paas.net/assets/trello-test-page.runtime.5bd36ba7.js"
+     "https://trello-bifrost.prod-east.frontend.public.atl-paas.net/assets/trello-test-page.37fda582.js",
+     "https://trello-bifrost.prod-east.frontend.public.atl-paas.net/assets/trello-test-page.runtime.1692dad2.js"
     ],
     "powered": "",
     "server": "AtlassianEdge",
@@ -1098,16 +1098,16 @@
      "flag:feature_gates"
     ],
     "gen": "",
-    "hash": "89568af94eaf",
+    "hash": "77afb8fcddee",
     "js": [
      "atl-onetrust-wrapper.min.js",
-     "trello-test-page.7755889c.js",
-     "trello-test-page.runtime.5bd36ba7.js"
+     "trello-test-page.37fda582.js",
+     "trello-test-page.runtime.1692dad2.js"
     ],
     "jsurls": [
      "https://atl-onetrust-wrapper.atlassian.com/assets/atl-onetrust-wrapper.min.js",
-     "https://trello-bifrost.prod-east.frontend.public.atl-paas.net/assets/trello-test-page.7755889c.js",
-     "https://trello-bifrost.prod-east.frontend.public.atl-paas.net/assets/trello-test-page.runtime.5bd36ba7.js"
+     "https://trello-bifrost.prod-east.frontend.public.atl-paas.net/assets/trello-test-page.37fda582.js",
+     "https://trello-bifrost.prod-east.frontend.public.atl-paas.net/assets/trello-test-page.runtime.1692dad2.js"
     ],
     "powered": "",
     "server": "AtlassianEdge",
