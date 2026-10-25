@@ -987,8 +987,8 @@
    "https://trello.com/.env|path /.env.json": "2026-09-28"
   },
   "chlog": {
-   "https://api.trello.com/docs/changelog": "5c346cd9216c",
-   "https://trello.com/docs/changelog": "5c346cd9216c"
+   "https://api.trello.com/docs/changelog": "0791ad255673",
+   "https://trello.com/docs/changelog": "0791ad255673"
   },
   "eps": [
    "api.statsigcdn.com/v1",
