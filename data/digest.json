@@ -1,1 +1,1 @@
-{"last":"2026-11-01","pending":[]}
+{"last":"2026-11-01","pending":[{"d":"2026-11-02","t":"scope+","k":"ywh:dana-bug-bounty-program","n":"DANA Bug Bounty Program","u":"https://yeswehack.com/programs/dana-bug-bounty-program","x":"out-of-scope added: Dev, Test, SIT, Staging, Sandbox, Demo, and other non-production environments","a":["Dev, Test, SIT, Staging, Sandbox, Demo, and other non-production environments"],"f":"out-of-scope","b":3000}]}
