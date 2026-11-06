@@ -43,15 +43,15 @@ const PNAME = {h1:"HackerOne",bc:"Bugcrowd",ywh:"YesWeHack",it:"Intigriti"};
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const ls = {get(k){try{return localStorage.getItem(k)}catch{return null}}, set(k,v){try{v?localStorage.setItem(k,v):localStorage.removeItem(k)}catch{}}};
-let P = {}, PZ = {}, F = [], W = [], EV = {}, wSha = null, tab = "new", limit = 100;
+let P = {}, PZ = {}, F = [], W = [], EV = {}, wSha = null, tab = "new", limit = 100, SET = {alerts_paused:false};
 
 async function init(){
   // no unique cache-buster: let the browser revalidate (ETag -> 304) so repeat loads are instant.
   // GitHub Pages purges its CDN on each deploy, so data is still fresh after every scan.
   const opt = { cache: "no-cache" };
-  const [p, f, ev] = await Promise.all([fetch("data/programs.json", opt).then(r=>r.json()), fetch("data/changes.json", opt).then(r=>r.json()).catch(()=>[]), fetch("data/evidence.json", opt).then(r=>r.json()).catch(()=>({}))]);
-  P = p.programs; PZ = p.paused || {}; F = f; EV = ev || {};
-  $("#meta").textContent = `${Object.keys(P).length} programs · updated ${p.updated.replace("T"," ")} UTC`;
+  const [p, f, ev, st] = await Promise.all([fetch("data/programs.json", opt).then(r=>r.json()), fetch("data/changes.json", opt).then(r=>r.json()).catch(()=>[]), fetch("data/evidence.json", opt).then(r=>r.json()).catch(()=>({})), fetch("data/settings.json", opt).then(r=>r.json()).catch(()=>({alerts_paused:false}))]);
+  P = p.programs; PZ = p.paused || {}; F = f; EV = ev || {}; SET = st || {alerts_paused:false};
+  $("#meta").textContent = `${Object.keys(P).length} programs · updated ${p.updated.replace("T"," ")} UTC${SET.alerts_paused ? " · ⏸ alerts paused" : ""}`;
   await loadWatch();
   const h = (location.hash || "").slice(1);
   if(["features","inscope","feed","all","recent","hunt","paused","watch"].includes(h)){
@@ -80,6 +80,19 @@ async function toggle(k){
     body: JSON.stringify({message:`watchlist: ${W.includes(k)?"remove":"add"} ${k}`, content: btoa(JSON.stringify(next,null,1)+"\n"), sha: wSha})});
   if(!r.ok){ alert("GitHub API error "+r.status+": "+(await r.text()).slice(0,200)); return; }
   wSha = (await r.json()).content.sha; W = next; render();
+}
+async function setPaused(paused){
+  const t = ls.get("bw_pat");
+  if(!t){ alert("Add a GitHub token in Settings to change alerts from here, or edit docs/data/settings.json on GitHub."); return; }
+  const path = "docs/data/settings.json";
+  const g = await fetch(`https://api.github.com/repos/${REPO}/contents/${path}`, {headers: auth(), cache:"no-store"});
+  if(!g.ok){ alert("GitHub API error "+g.status+": "+(await g.text()).slice(0,200)); return; }
+  const gj = await g.json();
+  const body = JSON.stringify({alerts_paused: paused}, null, 1) + "\n";
+  const r = await fetch(`https://api.github.com/repos/${REPO}/contents/${path}`, {method:"PUT", headers:{...auth(),"Content-Type":"application/json"},
+    body: JSON.stringify({message:`settings: ${paused?"pause":"resume"} email alerts`, content: btoa(body), sha: gj.sha})});
+  if(!r.ok){ alert("GitHub API error "+r.status+": "+(await r.text()).slice(0,200)); return; }
+  SET.alerts_paused = paused; render();
 }
 function match(k, extra){
   const q = $("#q").value.trim().toLowerCase(), pl = $("#plat").value;
@@ -157,6 +170,11 @@ function render(){
       <input type="password" id="pat" placeholder="github_pat_…" value="${esc(ls.get("bw_pat")||"")}" style="width:100%"><p><button id="savepat" class="star" style="margin:0">Save token</button></p>
       <p class="mut">No token? Edit <a href="https://github.com/${REPO}/edit/main/watchlist.json" target="_blank" rel="noopener">watchlist.json</a> directly. Keys look like <code>h1:handle</code>, <code>bc:slug</code>, <code>ywh:slug</code>, <code>it:company/handle</code>.</p>
       <p class="mut">Run a scan now: <a href="https://github.com/${REPO}/actions/workflows/scan.yml" target="_blank" rel="noopener">Actions → daily-scan → Run workflow</a>.</p></div>`];
+    html.push(`<div class="row" style="margin-top:16px"><b>Email alerts</b>
+      <p class="mut">Pause every alert email: new programs, watchlist changes and the daily scope digests. Scans keep running and the dashboard keeps updating; nothing is emailed while paused.</p>
+      <p><button class="star" style="margin:0" id="pausealerts">${SET.alerts_paused ? "Resume email alerts" : "Pause email alerts"}</button>
+      <span class="tag ${SET.alerts_paused ? "t-suspended" : "t-new"}">${SET.alerts_paused ? "paused" : "sending"}</span></p>
+      <p class="mut">No token? Edit <a href="https://github.com/${REPO}/edit/main/docs/data/settings.json" target="_blank" rel="noopener">settings.json</a> directly.</p></div>`);
   } else if(tab === "paused"){
     const since = cutoff(), flap = m => (m.flips||0) >= 3 ? `<span class="tag t-suspended">flapping · paused ${m.flips}×</span>` : "";
     const gone = Object.entries(PZ).filter(([k,m]) => (!since || m.gone >= since) && match(k, m.n||"")).sort((a,b)=>b[1].gone.localeCompare(a[1].gone));
@@ -229,6 +247,7 @@ $("#more").onclick = () => { limit += 200; render(); };
 $("#out").onclick = e => {
   const s = e.target.closest(".star[data-k]"); if(s) return toggle(s.dataset.k);
   if(e.target.id === "savepat"){ ls.set("bw_pat", $("#pat").value.trim()); loadWatch().then(()=>{alert("Saved."); render();}); }
+  if(e.target.id === "pausealerts") setPaused(!SET.alerts_paused);
 };
 $("#stype").innerHTML = typeOptions("Any scope type");
 init().catch(e => { $("#meta").textContent = "Failed to load data: " + e; });

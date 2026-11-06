@@ -22,6 +22,11 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
+      - name: Read alert settings
+        id: settings
+        run: |
+          paused=$(python3 -c 'import json;print(str(json.load(open("docs/data/settings.json")).get("alerts_paused", False)).lower())' 2>/dev/null || echo false)
+          echo "paused=$paused" >> "$GITHUB_OUTPUT"
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
@@ -45,22 +50,22 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: gh label create bounty-watch --color 5b4ee6 --description "bounty-watch automated alert" --force || true
       - name: Open alert issue
-        if: hashFiles('alert.md') != ''
+        if: steps.settings.outputs.paused != 'true' && hashFiles('alert.md') != ''
         env:
           GH_TOKEN: ${{ github.token }}
         run: gh issue create --title "$(cat alert_title.txt)" --body-file alert.md --label bounty-watch
       - name: Open daily scope digest issue
-        if: hashFiles('digest.md') != ''
+        if: steps.settings.outputs.paused != 'true' && hashFiles('digest.md') != ''
         env:
           GH_TOKEN: ${{ github.token }}
         run: gh issue create --title "$(cat digest_title.txt)" --body-file digest.md --label bounty-watch
       - name: Open new in-scope digest issue
-        if: hashFiles('inscope.md') != ''
+        if: steps.settings.outputs.paused != 'true' && hashFiles('inscope.md') != ''
         env:
           GH_TOKEN: ${{ github.token }}
         run: gh issue create --title "$(cat inscope_title.txt)" --body-file inscope.md --label bounty-watch
       - name: Tidy old alert issues
-        if: always()
+        if: always() && steps.settings.outputs.paused != 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
