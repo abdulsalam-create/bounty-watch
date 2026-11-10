@@ -362,14 +362,14 @@
      "alternativa.film/api/sitemap"
     ],
     "gen": "",
-    "hash": "b011387160c3",
+    "hash": "a1e6a8c8f20f",
     "js": [
-     "BfsSaQgW.js",
+     "DCK9cAij.js",
      "loader.js",
      "useberryScript.js"
     ],
     "jsurls": [
-     "https://alternativa.film/_nuxt/BfsSaQgW.js",
+     "https://alternativa.film/_nuxt/DCK9cAij.js",
      "https://api.useberry.com/integrations/liveUrl/scripts/useberryScript.js",
      "https://app.usercentrics.eu/browser-ui/latest/loader.js"
     ],
@@ -2434,6 +2434,7 @@
    "engagements.appsflyer.com/v1.0/c2s/click/app",
    "flag:beta-development",
    "flag:beta-production",
+   "flag:enable-background",
    "flag:feature-state",
    "flag:feature_type_unspecified",
    "flag:flag.at",
@@ -2450,6 +2451,21 @@
    "merchant.wolt.com/api/sitemap",
    "merchant.wolt.com/api/status",
    "merchant.wolt.com/api/webhook",
+   "ops.wolt.com/accounts-tool",
+   "ops.wolt.com/admin-new-verticals",
+   "ops.wolt.com/oauth2",
+   "ops.wolt.com/oauth2/login-callback",
+   "ops.wolt.com/oauth2/logout-callback",
+   "ops.wolt.com/payment-cancellation-tool",
+   "ops.wolt.com/payment-console",
+   "ops.wolt.com/payment-rules",
+   "ops.wolt.com/payment-tooling",
+   "ops.wolt.com/payments-back-office",
+   "ops.wolt.com/restaurant-monitoring",
+   "ops.wolt.com/restaurants",
+   "ops.wolt.com/user-campaigns",
+   "ops.wolt.com/user-journey-tools",
+   "ops.wolt.com/users",
    "services.epassi.fi/api/wallet/v1/init",
    "streetviewpixels-pa.googleapis.com/v1/thumbnail",
    "streetviewpixels-pa.googleapis.com/v1/tile",
@@ -2660,8 +2676,8 @@
      "runtime.js"
     ],
     "jsurls": [
-     "https://ops.wolt.com/static/apps/shell/releases/b865c280540ec6dad454faf7de8107d391e1457a/main.js",
-     "https://ops.wolt.com/static/apps/shell/releases/b865c280540ec6dad454faf7de8107d391e1457a/runtime.js"
+     "https://ops.wolt.com/static/apps/shell/releases/d7ff611ce7bb111431091c241577675ce5c57b04/main.js",
+     "https://ops.wolt.com/static/apps/shell/releases/d7ff611ce7bb111431091c241577675ce5c57b04/runtime.js"
     ],
     "powered": "",
     "server": "",
