@@ -362,14 +362,14 @@
      "alternativa.film/api/sitemap"
     ],
     "gen": "",
-    "hash": "a1e6a8c8f20f",
+    "hash": "08d04e7ea277",
     "js": [
-     "DCK9cAij.js",
+     "CfR5h1si.js",
      "loader.js",
      "useberryScript.js"
     ],
     "jsurls": [
-     "https://alternativa.film/_nuxt/DCK9cAij.js",
+     "https://alternativa.film/_nuxt/CfR5h1si.js",
      "https://api.useberry.com/integrations/liveUrl/scripts/useberryScript.js",
      "https://app.usercentrics.eu/browser-ui/latest/loader.js"
     ],
@@ -2485,15 +2485,15 @@
    "https://corporate.wolt.com": {
     "eps": [],
     "gen": "",
-    "hash": "b9fb602bb7d3",
+    "hash": "182d4fd65087",
     "js": [
      "js",
-     "main.16e8702b2e5a0c7bfd14.js",
+     "main.9bf9f068b8f8fc28d5eb.js",
      "mapbox-gl.js"
     ],
     "jsurls": [
      "https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.js",
-     "https://corporate.wolt.com/main.16e8702b2e5a0c7bfd14.js",
+     "https://corporate.wolt.com/main.9bf9f068b8f8fc28d5eb.js",
      "https://maps.googleapis.com/maps/api/js"
     ],
     "powered": "Express",
@@ -2676,8 +2676,8 @@
      "runtime.js"
     ],
     "jsurls": [
-     "https://ops.wolt.com/static/apps/shell/releases/968501d31a22a7e583ee6b9fe475adf61c58518d/main.js",
-     "https://ops.wolt.com/static/apps/shell/releases/968501d31a22a7e583ee6b9fe475adf61c58518d/runtime.js"
+     "https://ops.wolt.com/static/apps/shell/releases/034f4ef8613c86808a1571e7cab42442450ad791/main.js",
+     "https://ops.wolt.com/static/apps/shell/releases/034f4ef8613c86808a1571e7cab42442450ad791/runtime.js"
     ],
     "powered": "",
     "server": "",
