@@ -2485,15 +2485,15 @@
    "https://corporate.wolt.com": {
     "eps": [],
     "gen": "",
-    "hash": "182d4fd65087",
+    "hash": "61df6deef699",
     "js": [
      "js",
-     "main.9bf9f068b8f8fc28d5eb.js",
+     "main.8b4d34dab5c90f46b852.js",
      "mapbox-gl.js"
     ],
     "jsurls": [
      "https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.js",
-     "https://corporate.wolt.com/main.9bf9f068b8f8fc28d5eb.js",
+     "https://corporate.wolt.com/main.8b4d34dab5c90f46b852.js",
      "https://maps.googleapis.com/maps/api/js"
     ],
     "powered": "Express",
@@ -2590,7 +2590,7 @@
      "flag:flag.xk"
     ],
     "gen": "",
-    "hash": "4839d66f52aa",
+    "hash": "69d846a261c7",
     "js": [
      "034umt05re2q9.js",
      "055k90xulrnz3.js",
@@ -2609,12 +2609,12 @@
      "1s3mr7--9nj53.js",
      "1s7z1eepnau88.js",
      "1sqy_sqm-lpsw.js",
-     "1zyng8-t39rk5.js",
      "257-13_lutq6c.js",
-     "29_w9wpfojtk-.js",
+     "2byisu1bferb8.js",
      "2lwb36-jc5ns6.js",
      "2zuuquukhicg5.js",
      "35iwf-aypop4z.js",
+     "3ab50eb0dtbkz.js",
      "3n_s9qn3rqpsl.js",
      "3r9l24w07wgst.js",
      "3wen4-2bpo6c2.js",
@@ -2624,13 +2624,13 @@
      "_buildManifest.js",
      "_clientMiddlewareManifest.js",
      "_ssgManifest.js",
-     "turbopack-0tw4uyvsvzh13.js",
-     "turbopack-1q4bvg7s3yv-d.js"
+     "turbopack-1q4bvg7s3yv-d.js",
+     "turbopack-43chncper7_wq.js"
     ],
     "jsurls": [
-     "https://merchant.wolt.com/_next/static/PyihBFO4Ryrv3JMWHhhdn/_buildManifest.js",
-     "https://merchant.wolt.com/_next/static/PyihBFO4Ryrv3JMWHhhdn/_clientMiddlewareManifest.js",
-     "https://merchant.wolt.com/_next/static/PyihBFO4Ryrv3JMWHhhdn/_ssgManifest.js",
+     "https://merchant.wolt.com/_next/static/EFZwEmIHmVjU5VfPKXXtK/_buildManifest.js",
+     "https://merchant.wolt.com/_next/static/EFZwEmIHmVjU5VfPKXXtK/_clientMiddlewareManifest.js",
+     "https://merchant.wolt.com/_next/static/EFZwEmIHmVjU5VfPKXXtK/_ssgManifest.js",
      "https://merchant.wolt.com/_next/static/chunks/034umt05re2q9.js",
      "https://merchant.wolt.com/_next/static/chunks/055k90xulrnz3.js",
      "https://merchant.wolt.com/_next/static/chunks/0_f0ty1xifpbu.js",
@@ -2648,20 +2648,20 @@
      "https://merchant.wolt.com/_next/static/chunks/1s3mr7--9nj53.js",
      "https://merchant.wolt.com/_next/static/chunks/1s7z1eepnau88.js",
      "https://merchant.wolt.com/_next/static/chunks/1sqy_sqm-lpsw.js",
-     "https://merchant.wolt.com/_next/static/chunks/1zyng8-t39rk5.js",
      "https://merchant.wolt.com/_next/static/chunks/257-13_lutq6c.js",
-     "https://merchant.wolt.com/_next/static/chunks/29_w9wpfojtk-.js",
+     "https://merchant.wolt.com/_next/static/chunks/2byisu1bferb8.js",
      "https://merchant.wolt.com/_next/static/chunks/2lwb36-jc5ns6.js",
      "https://merchant.wolt.com/_next/static/chunks/2zuuquukhicg5.js",
      "https://merchant.wolt.com/_next/static/chunks/35iwf-aypop4z.js",
+     "https://merchant.wolt.com/_next/static/chunks/3ab50eb0dtbkz.js",
      "https://merchant.wolt.com/_next/static/chunks/3n_s9qn3rqpsl.js",
      "https://merchant.wolt.com/_next/static/chunks/3r9l24w07wgst.js",
      "https://merchant.wolt.com/_next/static/chunks/3wen4-2bpo6c2.js",
      "https://merchant.wolt.com/_next/static/chunks/3ylzdrtivv1h8.js",
      "https://merchant.wolt.com/_next/static/chunks/41wj-m3mne82p.js",
      "https://merchant.wolt.com/_next/static/chunks/43-xi2r18_5ih.js",
-     "https://merchant.wolt.com/_next/static/chunks/turbopack-0tw4uyvsvzh13.js",
-     "https://merchant.wolt.com/_next/static/chunks/turbopack-1q4bvg7s3yv-d.js"
+     "https://merchant.wolt.com/_next/static/chunks/turbopack-1q4bvg7s3yv-d.js",
+     "https://merchant.wolt.com/_next/static/chunks/turbopack-43chncper7_wq.js"
     ],
     "powered": "",
     "server": "",
@@ -2676,8 +2676,8 @@
      "runtime.js"
     ],
     "jsurls": [
-     "https://ops.wolt.com/static/apps/shell/releases/034f4ef8613c86808a1571e7cab42442450ad791/main.js",
-     "https://ops.wolt.com/static/apps/shell/releases/034f4ef8613c86808a1571e7cab42442450ad791/runtime.js"
+     "https://ops.wolt.com/static/apps/shell/releases/d5a639ea95d841e678e4d84ebcc8ed9eb27180b9/main.js",
+     "https://ops.wolt.com/static/apps/shell/releases/d5a639ea95d841e678e4d84ebcc8ed9eb27180b9/runtime.js"
     ],
     "powered": "",
     "server": "",
