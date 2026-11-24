@@ -1,1 +1,1 @@
-{"last":"2026-11-24","pending":[]}
+{"last":"2026-11-24","pending":[{"d":"2026-11-24","t":"scope+","k":"h1:khealth","n":"KHealth","u":"https://hackerone.com/khealth","x":"scope added: *.atlantichealthvirtualcare.org, *.uvahealthpcod.org, patientgpt.pennmedicine.k-test.connect-visit.com, pennmedicine.k-test.connect-visit.com","a":["*.atlantichealthvirtualcare.org","*.uvahealthpcod.org","patientgpt.pennmedicine.k-test.connect-visit.com","pennmedicine.k-test.connect-visit.com"],"f":"scope","b":1}]}
